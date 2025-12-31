@@ -1,11 +1,128 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Manage Users{% endblock %}
+
+{% block extra_content %}
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 15px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
+                <h5 class="modal-title" id="addUserModalLabel" style="color: var(--primary-gold);">Add New User Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('dashboard_add_user') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Username</label>
+                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="e.g. john_doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Email Address</label>
+                        <input type="email" name="email" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="john@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Initial Password</label>
+                        <input type="password" name="password" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="••••••••">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">User Role</label>
+                        <select name="role" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;">
+                            <option value="user" selected style="background: #1a1a1a;">Regular User</option>
+                            <option value="admin" style="background: #1a1a1a;">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_demo" id="isDemoSwitch">
+                        <label class="form-check-label" for="isDemoSwitch" style="color: #aaa;">Initialize in Demo Mode</label>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(212, 175, 55, 0.1);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn" style="background: var(--gold-gradient); color: #000; font-weight: 700; border-radius: 8px; border: none; padding: 8px 25px;">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        background: rgba(255,255,255,0.1);
+        border-color: var(--primary-gold);
+        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+        color: #fff;
+    }
+    .modal-content {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+</style>
+{% endblock %}
 {% block page_title %}Manage Users{% endblock %}
+
+{% block extra_content %}
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 15px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
+                <h5 class="modal-title" id="addUserModalLabel" style="color: var(--primary-gold);">Add New User Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('dashboard_add_user') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Username</label>
+                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="e.g. john_doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Email Address</label>
+                        <input type="email" name="email" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="john@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Initial Password</label>
+                        <input type="password" name="password" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="••••••••">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">User Role</label>
+                        <select name="role" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;">
+                            <option value="user" selected style="background: #1a1a1a;">Regular User</option>
+                            <option value="admin" style="background: #1a1a1a;">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_demo" id="isDemoSwitch">
+                        <label class="form-check-label" for="isDemoSwitch" style="color: #aaa;">Initialize in Demo Mode</label>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(212, 175, 55, 0.1);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn" style="background: var(--gold-gradient); color: #000; font-weight: 700; border-radius: 8px; border: none; padding: 8px 25px;">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        background: rgba(255,255,255,0.1);
+        border-color: var(--primary-gold);
+        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+        color: #fff;
+    }
+    .modal-content {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Users List ({{ users|length }} registered)</h5>
+        <button type="button" class="btn btn-sm" style="background: var(--gold-gradient); color: #000; font-weight: 700; border: none; border-radius: 6px; padding: 8px 16px;" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="fas fa-plus-circle me-1"></i> Add New User
+        </button>
     </div>
     <div class="card-body">
         {% if users %}
@@ -96,4 +213,61 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_content %}
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 15px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
+                <h5 class="modal-title" id="addUserModalLabel" style="color: var(--primary-gold);">Add New User Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('dashboard_add_user') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Username</label>
+                        <input type="text" name="username" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="e.g. john_doe">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Email Address</label>
+                        <input type="email" name="email" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="john@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">Initial Password</label>
+                        <input type="password" name="password" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;" required placeholder="••••••••">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #aaa;">User Role</label>
+                        <select name="role" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(212, 175, 55, 0.2); color: #fff;">
+                            <option value="user" selected style="background: #1a1a1a;">Regular User</option>
+                            <option value="admin" style="background: #1a1a1a;">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_demo" id="isDemoSwitch">
+                        <label class="form-check-label" for="isDemoSwitch" style="color: #aaa;">Initialize in Demo Mode</label>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(212, 175, 55, 0.1);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn" style="background: var(--gold-gradient); color: #000; font-weight: 700; border-radius: 8px; border: none; padding: 8px 25px;">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        background: rgba(255,255,255,0.1);
+        border-color: var(--primary-gold);
+        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+        color: #fff;
+    }
+    .modal-content {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+</style>
 {% endblock %}
