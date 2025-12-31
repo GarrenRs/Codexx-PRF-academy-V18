@@ -1454,6 +1454,88 @@ def toggle_user_demo(user_id):
     return redirect(url_for('dashboard_users'))
 
 
+@app.route('/dashboard/users/add', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_add_user():
+    """Create a new user account from the Admin Panel"""
+    username = request.form.get('username')
+    password = request.form.get('password')
+    email = request.form.get('email')
+    role = request.form.get('role', 'user')
+    is_demo = request.form.get('is_demo') == 'on'
+
+    if not username or not password or not email:
+        flash('All fields are required', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Check for existing user in data.json
+    data = load_data()
+    if 'users' not in data:
+        data['users'] = []
+
+    if any(u['username'] == username for u in data['users']):
+        flash('Username already exists', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Hash password and create user object for data.json
+    new_user = {
+        'id': len(data['users']) + 1,
+        'username': username,
+        'password_hash': generate_password_hash(password),
+        'email': email,
+        'role': role,
+        'is_demo': is_demo,
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    data['users'].append(new_user)
+    
+    # Initialize portfolio for the new user
+    if 'portfolios' not in data:
+        data['portfolios'] = {}
+    data['portfolios'][username] = {
+        'username': username,
+        'name': '',
+        'title': '',
+        'description': '',
+        'about': '',
+        'photo': '',
+        'skills': [],
+        'projects': [],
+        'messages': [],
+        'clients': [],
+        'contact': {'email': '', 'phone': '', 'location': ''},
+        'social': {'linkedin': '', 'github': '', 'twitter': ''},
+        'settings': {'theme': 'luxury-gold'},
+        'visitors': {'total': 0, 'today': [], 'unique_ips': []}
+    }
+    
+    save_data(data)
+    
+    # Sync with PostgreSQL
+    try:
+        ws = Workspace.query.first()
+        if not ws:
+            ws = Workspace(name='Default', slug='default')
+            db.session.add(ws)
+            db.session.commit()
+            
+        db_user = User(
+            username=username,
+            password_hash=new_user['password_hash'],
+            email=email,
+            role=role,
+            workspace_id=ws.id
+        )
+        db.session.add(db_user)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Error syncing user to DB: {str(e)}")
+
+    flash(f'✅ User {username} created successfully!', 'success')
+    return redirect(url_for('dashboard_users'))
+
 @app.route('/dashboard/users/delete/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
