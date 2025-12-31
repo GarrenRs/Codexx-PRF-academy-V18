@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" data-portfolio-theme="{{ current_theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ data.description or 'Professional portfolio showcasing skills, projects, and expertise in web development & design' }}">
+    <meta name="keywords" content="portfolio, {{ data.name or 'developer' }}, web developer, designer, projects, skills, freelance">
+    <meta name="author" content="{{ data.name or 'Codexx Academy' }}">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url_root.rstrip('/') }}">
+    <meta property="og:title" content="{{ data.name or 'Codexx Academy Member' }} - Professional Portfolio">
+    <meta property="og:description" content="{{ data.description or 'Premium Web Development & Design Solutions' }}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{{ request.url_root.rstrip('/') }}/static/logo/logo.png">
+    <meta property="og:url" content="{{ request.url_root.rstrip('/') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ data.name or 'Codexx Academy Member' }} - Professional Portfolio">
+    <meta name="twitter:description" content="{{ data.description or 'Premium Web Development & Design Solutions' }}">
+    <meta name="twitter:image" content="{{ request.url_root.rstrip('/') }}/static/logo/logo.png">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo/logo.png') }}">
+    <title>{{ data.name or 'Codexx Academy' }} - Professional Portfolio</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='themes/' + current_theme + '.css') }}">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-portfolio-theme="{{ current_theme }}">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}" title="Back to Codexx Academy">
+                <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" height="45" class="me-2">
+                <span>Codexx Academy</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#skills">Skills</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#projects">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light btn-sm ms-2" id="themeToggle">
+                            <i class="fas fa-moon" id="themeIcon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section d-flex align-items-center min-vh-100">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h4 class="hero-subtitle mb-3">Professional Interface</h4>
+                        <h1 class="hero-title mb-4">{{ data.name or 'Your Name Here' }}</h1>
+                        <h3 class="hero-description mb-4">{{ data.title or 'Expert Professional' }}</h3>
+                        <p class="hero-text mb-5">{{ data.description or 'A trusted space where your professional needs meet tangible expertise and proven results.' }}</p>
+                        <div class="hero-buttons">
+                            <a href="#contact" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-paper-plane me-2"></i>Start a Conversation
+                            </a>
+                            <a href="#projects" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-th-list me-2"></i>Explore Projects
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image text-center">
+                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Profile" class="img-fluid rounded-circle shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <a href="#about">
+                <i class="fas fa-chevron-down"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Section Divider -->
+    <div class="section-divider">
+        <i class="divider-icon fas fa-star"></i>
+    </div>
+
+    <!-- About Section -->
+    <section id="about" class="section-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center mb-5">
+                    <h2 class="section-title">Professional Path</h2>
+                    <p class="section-subtitle">The foundation of trust and reliability</p>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="about-image">
+                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Professional Profile" class="img-fluid rounded shadow">
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="about-content">
+                        <h3 class="mb-4">{{ data.name or 'Identity & Values' }}</h3>
+                        <p class="mb-4">{{ data.about or 'A comprehensive professional overview focused on solving problems, delivering value, and establishing a baseline for professional cooperation.' }}</p>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <ul class="list-unstyled">
+                                    <li><strong>Professional:</strong> {{ data.name or 'Self' }}</li>
+                                    <li><strong>Focus Area:</strong> {{ data.title or 'Expertise' }}</li>
+                                    <li><strong>Base:</strong> {{ data.contact.location if data.contact else 'Global' }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <ul class="list-unstyled">
+                                    <li><strong>Direct:</strong> {{ data.contact.email if data.contact else 'Contact' }}</li>
+                                    <li><strong>Response:</strong> {{ data.contact.phone if data.contact else 'Fast' }}</li>
+                                    <li><strong>Proof:</strong> {{ data.projects|length if data.projects else 0 }} Case Studies</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('cv_preview') }}" class="btn btn-primary">
+                            <i class="fas fa-file-alt me-2"></i>View Professional Credentials
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Divider -->
+    <div class="section-divider">
+        <i class="divider-icon fas fa-code"></i>
+    </div>
+
+    <!-- Skills Section -->
+    <section id="skills" class="section-padding bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center mb-5">
+                    <h2 class="section-title">Core Competencies</h2>
+                    <p class="section-subtitle">Matching technical capability with your project needs</p>
+                </div>
+            </div>
+            <div class="row">
+                {% if data.skills %}
+                    {% for skill in data.skills %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="skill-item">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="skill-name">{{ skill.name }}</span>
+                                    <span class="skill-percentage">{{ skill.level }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ skill.level }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center">
+                        <p class="text-muted">No skills added yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Divider -->
+    <div class="section-divider">
+        <i class="divider-icon fas fa-lightbulb"></i>
+    </div>
+
+    <!-- Projects Section -->
+    <section id="projects" class="section-padding">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center mb-5">
+                    <h2 class="section-title">Case Studies & Evidence</h2>
+                    <p class="section-subtitle">Real-world implementation of skills and strategy</p>
+                </div>
+            </div>
+            <div class="row">
+                {% if data.projects %}
+                    {% for project in data.projects %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="project-card h-100" onclick="window.location.href='{{ url_for('project_detail', project_id=project.id) }}'" style="cursor: pointer;">
+                            <div class="project-image">
+                                {% if project.image and project.image.startswith('static/') %}
+                                    <img src="{{ url_for('static', filename=project.image.replace('static/', '')) }}" alt="{{ project.title }}">
+                                {% else %}
+                                    <img src="{{ project.image or url_for('static', filename='assets/project-placeholder.svg') }}" alt="{{ project.title }}">
+                                {% endif %}
+                                <div class="project-overlay">
+                                    <div class="text-center">
+                                        <div class="btn btn-light me-2">
+                                            <i class="fas fa-eye"></i>
+                                            View Details
+                                        </div>
+                                        {% if project.demo_url and project.demo_url != '#' %}
+                                            <a href="{{ project.demo_url }}" target="_blank" class="btn btn-light me-2" onclick="event.stopPropagation();">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        {% endif %}
+                                        {% if project.github_url and project.github_url != '#' %}
+                                            <a href="{{ project.github_url }}" target="_blank" class="btn btn-light" onclick="event.stopPropagation();">
+                                                <i class="fab fa-github"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="project-content">
+                                <h5>{{ project.title }}</h5>
+                                <p>{{ project.short_description or project.description }}</p>
+                                {% if project.technologies %}
+                                    <div class="project-tech">
+                                        {% for tech in project.technologies %}
+                                            <span class="badge bg-primary me-1 mb-1">{{ tech }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center">
+                        <p class="text-muted">No projects added yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section Divider -->
+    <div class="section-divider">
+        <i class="divider-icon fas fa-paper-plane"></i>
+    </div>
+
+    <!-- Back to Academy Section (Professional Link) -->
+    <div class="container mt-4 mb-3">
+        <div class="text-center">
+            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary" style="color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2);">
+                <i class="fas fa-arrow-up-right-from-square me-1"></i>
+                Explore the Codexx Academy Community
+            </a>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section-padding bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center mb-5">
+                    <h2 class="section-title">Initiate Cooperation</h2>
+                    <p class="section-subtitle">A direct channel for professional inquiries and project discussions</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form action="{{ url_for('contact') }}" method="POST" id="contactForm" novalidate>
+                            <!-- Honeypot field (hidden from real users) -->
+                            <input type="text" name="website" style="display: none; position: absolute; left: -9999px;" tabindex="-1" autocomplete="off">
+                            
+                            <!-- Hidden field for portfolio owner -->
+                            <input type="hidden" name="portfolio_owner" id="portfolio_owner" value="{{ data.username if data.username else data.name }}">
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">
+                                        <i class="fas fa-user text-primary me-2"></i>Full Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Your full name" required minlength="2">
+                                    <div class="invalid-feedback d-block" id="nameError"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope text-primary me-2"></i>Email Address *
+                                    </label>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="your.email@example.com" required>
+                                    <div class="invalid-feedback d-block" id="emailError"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="request_type" class="form-label">
+                                        <i class="fas fa-tag text-primary me-2"></i>Request Type *
+                                    </label>
+                                    <select class="form-select" id="request_type" name="request_type" required>
+                                        <option value="" selected disabled>Select request type</option>
+                                        <option value="service">Looking for a service</option>
+                                        <option value="partnership">Looking for a partnership</option>
+                                        <option value="consultation">Consultation / Question</option>
+                                        <option value="job_offer">Job Offer</option>
+                                        <option value="other">Something else</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="interest_area" class="form-label">
+                                        <i class="fas fa-briefcase text-primary me-2"></i>Area of Interest *
+                                    </label>
+                                    <select class="form-select" id="interest_area" name="interest_area" required>
+                                        <option value="" selected disabled>Select interest area</option>
+                                        <option value="development">Development</option>
+                                        <option value="design">Design</option>
+                                        <option value="optimization">Fix / Optimization</option>
+                                        <option value="consulting">Consulting</option>
+                                        <option value="new_project">New Project</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="seriousness" class="form-label">
+                                        <i class="fas fa-fire text-primary me-2"></i>Seriousness Level
+                                    </label>
+                                    <select class="form-select" id="seriousness" name="seriousness">
+                                        <option value="inquiry">Just an inquiry</option>
+                                        <option value="soon">Looking to execute soon</option>
+                                        <option value="later">Looking to execute later</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="contact_pref" class="form-label">
+                                        <i class="fas fa-phone-alt text-primary me-2"></i>Preferred Contact
+                                    </label>
+                                    <select class="form-select" id="contact_pref" name="contact_pref">
+                                        <option value="email">Email</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                        <option value="call">Phone Call</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="company" class="form-label">
+                                    <i class="fas fa-building text-primary me-2"></i>Company / Project Name
+                                </label>
+                                <input type="text" class="form-control" id="company" name="company" placeholder="Optional context">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="message" class="form-label">
+                                    <i class="fas fa-comment text-primary me-2"></i>Your Message *
+                                </label>
+                                <textarea class="form-control" id="message" name="message" rows="5" placeholder="Tell me about your project, ideas, or anything you'd like to discuss..." required minlength="10"></textarea>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <span id="charCount">0</span>/500 characters (minimum 10)
+                                </small>
+                                <div class="invalid-feedback d-block" id="messageError"></div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg contact-submit-btn" id="submitBtn">
+                                    <i class="fas fa-paper-plane me-2"></i>
+                                    <span class="btn-text">Send Professional Inquiry</span>
+                                    <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                </button>
+                            </div>
+                            <p class="text-muted text-center mt-3" style="font-size: 0.9rem;">
+                                <i class="fas fa-lock me-1"></i>
+                                We respect your privacy. Your information will only be used to respond to your inquiry.
+                            </p>
+                    </form>
+                </div>
+            </div>
+            <div class="row mt-5">
+                <div class="col-lg-12">
+                    <div class="contact-info text-center">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="contact-item">
+                                    <i class="fas fa-envelope fa-2x mb-3"></i>
+                                    <h5>Email</h5>
+                                    <p>{{ data.contact.email if data.contact and data.contact.email else 'Your Email' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="contact-item">
+                                    <i class="fas fa-phone fa-2x mb-3"></i>
+                                    <h5>Phone</h5>
+                                    <p>{{ data.contact.phone if data.contact and data.contact.phone else '+1 (555) 123-4567' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="contact-item">
+                                    <i class="fas fa-map-marker-alt fa-2x mb-3"></i>
+                                    <h5>Location</h5>
+                                    <p>{{ data.contact.location if data.contact and data.contact.location else 'Your Location' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-section py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="text-center">
+                        <p class="mb-0">&copy; 2026 Codexx. All rights reserved. | Premium Digital Solutions</p>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                            {% if data.social %}
+                                {% if data.social.linkedin and data.social.linkedin != '' %}
+                                    <a href="{{ data.social.linkedin }}" class="social-link" target="_blank" rel="noopener noreferrer" title="LinkedIn">
+                                        <i class="fab fa-linkedin"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.github and data.social.github != '' %}
+                                    <a href="{{ data.social.github }}" class="social-link" target="_blank" rel="noopener noreferrer" title="GitHub">
+                                        <i class="fab fa-github"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.twitter and data.social.twitter != '' %}
+                                    <a href="{{ data.social.twitter }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Twitter">
+                                        <i class="fab fa-twitter"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.instagram and data.social.instagram != '' %}
+                                    <a href="{{ data.social.instagram }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Instagram">
+                                        <i class="fab fa-instagram"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.facebook and data.social.facebook != '' %}
+                                    <a href="{{ data.social.facebook }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Facebook">
+                                        <i class="fab fa-facebook"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.youtube and data.social.youtube != '' %}
+                                    <a href="{{ data.social.youtube }}" class="social-link" target="_blank" rel="noopener noreferrer" title="YouTube">
+                                        <i class="fab fa-youtube"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.behance and data.social.behance != '' %}
+                                    <a href="{{ data.social.behance }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Behance">
+                                        <i class="fab fa-behance"></i>
+                                    </a>
+                                {% endif %}
+                                {% if data.social.dribbble and data.social.dribbble != '' %}
+                                    <a href="{{ data.social.dribbble }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Dribbble">
+                                        <i class="fab fa-dribbble"></i>
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <!-- Default social links if no data -->
+                                <a href="#" class="social-link" title="LinkedIn">
+                                    <i class="fab fa-linkedin"></i>
+                                </a>
+                                <a href="#" class="social-link" title="GitHub">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                <a href="#" class="social-link" title="Twitter">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                                <a href="#" class="social-link" title="Instagram">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    
+    <!-- Contact Form Enhancement Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('contactForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const nameInput = document.getElementById('name');
+            const emailInput = document.getElementById('email');
+            const messageInput = document.getElementById('message');
+            const charCount = document.getElementById('charCount');
+            
+            // Character counter
+            if (messageInput && charCount) {
+                messageInput.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+                    if (this.value.length > 500) {
+                        this.value = this.value.substring(0, 500);
+                        charCount.textContent = '500';
+                    }
+                });
+            }
+            
+            // Form validation and submission
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validate fields
+                    let isValid = true;
+                    let errors = {};
+                    
+                    // Name validation
+                    if (!nameInput.value.trim()) {
+                        errors.name = 'Please enter your name';
+                        isValid = false;
+                    } else if (nameInput.value.length < 2) {
+                        errors.name = 'Name must be at least 2 characters';
+                        isValid = false;
+                    }
+                    
+                    // Email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailInput.value.trim()) {
+                        errors.email = 'Please enter your email';
+                        isValid = false;
+                    } else if (!emailRegex.test(emailInput.value)) {
+                        errors.email = 'Please enter a valid email address';
+                        isValid = false;
+                    }
+                    
+                    // Message validation
+                    if (!messageInput.value.trim()) {
+                        errors.message = 'Please enter a message';
+                        isValid = false;
+                    } else if (messageInput.value.length < 10) {
+                        errors.message = 'Message must be at least 10 characters';
+                        isValid = false;
+                    }
+                    
+                    // Display errors
+                    document.getElementById('nameError').textContent = errors.name || '';
+                    document.getElementById('emailError').textContent = errors.email || '';
+                    document.getElementById('messageError').textContent = errors.message || '';
+                    
+                    if (!isValid) {
+                        return false;
+                    }
+                    
+                    // Show loading state
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        const spinner = submitBtn.querySelector('.spinner-border');
+                        const btnText = submitBtn.querySelector('.btn-text');
+                        if (spinner && btnText) {
+                            spinner.style.display = 'inline-block';
+                            btnText.textContent = 'Sending...';
+                        }
+                    }
+                    
+                    // Submit form
+                    form.submit();
+                });
+            }
+            
+            // Add real-time validation feedback
+            if (nameInput) {
+                nameInput.addEventListener('blur', function() {
+                    if (this.value && this.value.length < 2) {
+                        document.getElementById('nameError').textContent = 'Name must be at least 2 characters';
+                    } else {
+                        document.getElementById('nameError').textContent = '';
+                    }
+                });
+            }
+            
+            if (emailInput) {
+                emailInput.addEventListener('blur', function() {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (this.value && !emailRegex.test(this.value)) {
+                        document.getElementById('emailError').textContent = 'Please enter a valid email address';
+                    } else {
+                        document.getElementById('emailError').textContent = '';
+                    }
+                });
+            }
+            
+            if (messageInput) {
+                messageInput.addEventListener('blur', function() {
+                    if (this.value && this.value.length < 10) {
+                        document.getElementById('messageError').textContent = 'Message must be at least 10 characters';
+                    } else {
+                        document.getElementById('messageError').textContent = '';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+{
+  "name": "Demo Portfolio - Codexx",
+  "title": "Web Developer & Designer",
+  "description": "Experience the power of Codexx Academy Platform with this interactive demo",
+  "photo": "static/assets/profile-placeholder.svg",
+  "about": "Welcome to the Codexx Academy Platform! This is a live demo showcasing all the features available in our professional portfolio management system. Feel free to explore and customize this demo to see how your portfolio would look.",
+  "skills": [
+    {
+      "name": "Web Development",
+      "level": 90
+    },
+    {
+      "name": "UI/UX Design",
+      "level": 85
+    },
+    {
+      "name": "JavaScript",
+      "level": 88
+    },
+    {
+      "name": "React.js",
+      "level": 85
+    },
+    {
+      "name": "Python",
+      "level": 80
+    }
+  ],
+  "projects": [],
+  "contact": {
+    "email": "demo@codexx.com",
+    "phone": "+1 234 567 8900",
+    "location": "San Francisco, CA"
+  },
+  "social": {},
+  "messages": [],
+  "visitors": {
+    "total": 0,
+    "today": [],
+    "unique_ips": []
+  },
+  "settings": {
+    "theme": "luxury-gold"
+  },
+  "clients": [],
+  "portfolios": {
+    "admin": {
+      "name": "admin",
+      "title": "Web Developer & Designer",
+      "description": "Welcome to my professional portfolio.",
+      "skills": [],
+      "projects": [],
+      "messages": [],
+      "clients": [],
+      "settings": {
+        "theme": "modern-dark"
+      },
+      "visitors": {
+        "total": 4,
+        "today": [
+          {
+            "ip": "105.235.128.227, 10.83.1.85",
+            "timestamp": "2025-12-31 21:01:27",
+            "date": "2025-12-31"
+          },
+          {
+            "ip": "105.235.128.227, 10.83.9.77",
+            "timestamp": "2025-12-31 21:02:01",
+            "date": "2025-12-31"
+          },
+          {
+            "ip": "105.235.128.227, 10.83.4.101",
+            "timestamp": "2025-12-31 21:02:44",
+            "date": "2025-12-31"
+          },
+          {
+            "ip": "105.235.128.227, 10.83.9.77",
+            "timestamp": "2025-12-31 21:07:23",
+            "date": "2025-12-31"
+          },
+          {
+            "ip": "105.235.128.227, 10.83.11.58",
+            "timestamp": "2025-12-31 21:07:24",
+            "date": "2025-12-31"
+          }
+        ],
+        "unique_ips": [
+          "105.235.128.227, 10.83.1.85",
+          "105.235.128.227, 10.83.4.101",
+          "105.235.128.227, 10.83.9.77",
+          "105.235.128.227, 10.83.11.58"
+        ]
+      }
+    }
+  }
+}

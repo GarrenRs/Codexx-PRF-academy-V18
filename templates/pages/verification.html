@@ -1,0 +1,62 @@
+{% extends "public_base.html" %}
+
+{% block content %}
+<section class="section-padding hero" style="padding-top: 120px; background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 70%); min-height: 100vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="p-5 rounded-4 border" style="background: rgba(13, 13, 13, 0.9); border-color: rgba(212, 175, 55, 0.2) !important; backdrop-filter: blur(10px);">
+                    <div class="text-center mb-5">
+                        <div class="mb-4">
+                            <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" style="height: 100px; width: auto; filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.3));">
+                        </div>
+                        <h1 class="display-4 gold-text mb-3">Verification Process</h1>
+                        <p class="text-gold small fw-bold"><i class="fas fa-check-double me-1"></i> Authentic Proof of Execution</p>
+                        <div class="footer-divider mx-auto"></div>
+                    </div>
+                    
+                    <div class="text-secondary" style="line-height: 1.8; font-size: 0.95rem;">
+                        <p class="mb-5 text-center">Codexx Academy employs a rigorous multi-stage verification process to ensure that every portfolio represents real work and a real professional.</p>
+                        
+                        <div class="row g-4 mb-5">
+                            <div class="col-md-6">
+                                <div class="p-4 rounded border h-100" style="background: rgba(40, 167, 69, 0.02); border-color: rgba(40, 167, 69, 0.2);">
+                                    <h3 class="text-white h5 mb-3"><span style="color: #28a745;" class="me-2">01.</span> Identity Verification</h3>
+                                    <p>We confirm the identity of the portfolio owner. Anonymous profiles or fake entities are not permitted in our public gallery. This ensures direct accountability for the work shown.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-4 rounded border h-100" style="background: rgba(212, 175, 55, 0.02); border-color: rgba(212, 175, 55, 0.1);">
+                                    <h3 class="text-white h5 mb-3"><span class="gold-text me-2">02.</span> Project Proof</h3>
+                                    <p>Every project listed must be accompanied by proof of execution. This includes live links, source code access (where applicable), or client testimonials that we can independently verify.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-4 rounded border h-100" style="background: rgba(212, 175, 55, 0.02); border-color: rgba(212, 175, 55, 0.1);">
+                                    <h3 class="text-white h5 mb-3"><span class="gold-text me-2">03.</span> Role & Ownership</h3>
+                                    <p>We verify the specific role the member played in each project. Whether they were a solo builder, a team lead, or a specialist, their contribution must be accurately represented.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-4 rounded border h-100" style="background: rgba(212, 175, 55, 0.02); border-color: rgba(212, 175, 55, 0.1);">
+                                    <h3 class="text-white h5 mb-3"><span class="gold-text me-2">04.</span> Ongoing Activity</h3>
+                                    <p>Verification is not a one-time event. We monitor ongoing activity to ensure that the "Verified" status remains current and reflective of active execution.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-4 border text-center" style="background: rgba(212, 175, 55, 0.05); border-color: rgba(212, 175, 55, 0.2);">
+                            <h3 class="text-white h4 mb-3">Why This Matters</h3>
+                            <p class="mb-0">When you see the <strong>Verified Badge</strong> on a Codexx Academy portfolio, you are looking at a professional whose history has been vetted. We provide the infrastructure of trust so you can focus on the work.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-5">
+                        <a href="/" class="btn btn-gold btn-sm px-5">Return Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
