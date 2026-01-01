@@ -1242,18 +1242,21 @@ def contact():
     return redirect(url_for('index') + '#contact')
 
 
-@app.route('/project/<int:project_id>')
-def project_detail(project_id):
-    """Project detail page"""
-    data = load_data()
+@app.route('/portfolio/<username>/project/<int:project_id>')
+def project_detail(username, project_id):
+    """Project detail page for a specific user"""
+    user_data = load_data(username=username)
+    if not user_data:
+        return render_template('404.html'), 404
+        
     project = next(
-        (p for p in data.get('projects', []) if p.get('id') == project_id),
+        (p for p in user_data.get('projects', []) if p.get('id') == project_id),
         None)
 
     if not project:
         return render_template('404.html'), 404
 
-    return render_template('project_detail.html', project=project, data=data)
+    return render_template('project_detail.html', project=project, data=user_data)
 
 
 @app.route('/sitemap.xml')
@@ -1591,16 +1594,30 @@ def dashboard_logout():
 def dashboard():
     """Main dashboard page"""
     username = session.get('username')
-    user_data = load_data(username=username)
-    stats = {
-        'projects': len(user_data.get('projects', [])),
-        'skills': len(user_data.get('skills', [])),
-        'messages': len(user_data.get('messages', [])),
-        'unread_messages': len([m for m in user_data.get('messages', []) if not m.get('read', False)]),
-        'visitors': user_data.get('visitors', {}).get('total', 0),
-        'today_visitors': len(user_data.get('visitors', {}).get('today', []))
-    }
-    return render_template('dashboard/index.html', data=user_data, stats=stats)
+    is_admin = session.get('is_admin', False)
+    data = load_data()
+    
+    if is_admin:
+        stats = {
+            'users': len(data.get('users', [])),
+            'active_portfolios': len([u for u in data.get('users', []) if not u.get('is_demo', True)]),
+            'messages': 0,
+            'visitors': 0
+        }
+        for port in data.get('portfolios', {}).values():
+            stats['messages'] += len(port.get('messages', []))
+            stats['visitors'] += port.get('visitors', {}).get('total', 0)
+    else:
+        user_data = data.get('portfolios', {}).get(username, {})
+        stats = {
+            'projects': len(user_data.get('projects', [])),
+            'skills': len(user_data.get('skills', [])),
+            'messages': len(user_data.get('messages', [])),
+            'unread_messages': len([m for m in user_data.get('messages', []) if not m.get('read', False)]),
+            'visitors': user_data.get('visitors', {}).get('total', 0),
+            'today_visitors': len(user_data.get('visitors', {}).get('today', []))
+        }
+    return render_template('dashboard/index.html', data=data, stats=stats)
 
 
 @app.route('/documentation')

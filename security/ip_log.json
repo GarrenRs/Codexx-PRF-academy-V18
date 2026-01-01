@@ -75,5 +75,12 @@
     "activity": "contact_message",
     "details": "From: raesondark@gmail.com to Codexx",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.83.5.121",
+    "timestamp": "2026-01-01 01:27:36",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
   }
 ]

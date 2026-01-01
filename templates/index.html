@@ -40,8 +40,8 @@
             <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('index') }}" title="Back to Codexx Academy">
                 <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" height="45" class="me-2">
                 <div class="brand-text">
-                    <span class="d-block lh-1">Codexx</span>
-                    <small class="d-block opacity-75" style="font-size: 0.65rem; letter-spacing: 1px;">ACADEMY</small>
+                    <span class="d-block lh-1">Codexx Academy</span>
+                    <small class="d-block opacity-75" style="font-size: 0.65rem; letter-spacing: 1px;">ELITE PORTFOLIO</small>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -79,9 +79,9 @@
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="hero-content">
-                        <div class="hero-badge mb-3 d-inline-block px-3 py-1 rounded-pill">
-                            <i class="fas fa-shield-alt me-2"></i>Verified Professional
-                        </div>
+                            <div class="hero-badge mb-3 d-inline-block px-3 py-1 rounded-pill" style="background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); box-shadow: 0 0 15px rgba(40, 167, 69, 0.1);">
+                                <i class="fas fa-shield-alt me-2"></i>Verified Professional
+                            </div>
                         <h1 class="hero-title mb-4 display-3 fw-bold">{{ data.name or 'Your Name Here' }}</h1>
                         <h3 class="hero-description mb-4 h4 text-primary">{{ data.title or 'Expert Professional' }}</h3>
                         <p class="hero-text mb-5 lead">{{ data.description or 'A trusted space where your professional needs meet tangible expertise and proven results.' }}</p>
@@ -210,10 +210,10 @@
                 {% if data.projects %}
                     {% for project in data.projects %}
                         <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="project-card h-100" onclick="window.location.href='{{ url_for('project_detail', project_id=project.id) }}'" style="cursor: pointer;">
+                            <div class="project-card h-100" onclick="window.location.href='/portfolio/{{ data.username }}/project/{{ project.id }}'" style="cursor: pointer;">
                             <div class="project-image">
-                                {% if project.image and project.image.startswith('static/') %}
-                                    <img src="{{ url_for('static', filename=project.image.replace('static/', '')) }}" alt="{{ project.title }}">
+                                {% if project.image and (project.image.startswith('static/') or project.image.startswith('attached_assets/')) %}
+                                    <img src="{{ url_for('static', filename=project.image.replace('static/', '')) if project.image.startswith('static/') else project.image }}" alt="{{ project.title }}">
                                 {% else %}
                                     <img src="{{ project.image or url_for('static', filename='assets/project-placeholder.svg') }}" alt="{{ project.title }}">
                                 {% endif %}
