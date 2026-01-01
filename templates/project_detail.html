@@ -399,43 +399,43 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-code me-2 text-primary"></i>Codexx
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" height="45" class="me-2">
+                <span>Codexx Academy</span>
             </a>
 
             <div class="d-flex align-items-center">
-                <a href="{{ url_for('index') }}" class="back-btn me-3">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to Home
+                <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Portfolio
                 </a>
 
-                <button class="btn btn-outline-light" id="themeToggle" title="Toggle dark/light mode">
+                <button class="btn btn-outline-light btn-sm" id="themeToggle" title="Toggle dark/light mode">
                     <i class="fas fa-moon" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <!-- Project Hero Section -->
-    <section class="project-hero">
+    <section class="project-hero py-5">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
+                    <div class="hero-badge mb-3 d-inline-block px-3 py-1 rounded-pill">
+                        <i class="fas fa-project-diagram me-2"></i>Project Detail
+                    </div>
                     <h1 class="display-4 fw-bold text-primary mb-3">{{ project.title }}</h1>
-                    <p class="lead text-muted mb-4">{{ project.short_description or project.description }}</p>
+                    <p class="lead text-secondary mb-4">{{ project.short_description or project.description }}</p>
 
-                    <div class="action-buttons">
+                    <div class="action-buttons d-flex gap-3">
                         {% if project.demo_url and project.demo_url != '#' %}
-                        <a href="{{ project.demo_url }}" target="_blank" class="action-btn btn-demo">
-                            <i class="fas fa-eye"></i>
-                            View Demo
+                        <a href="{{ project.demo_url }}" target="_blank" class="btn btn-primary btn-lg rounded-pill px-4">
+                            <i class="fas fa-eye me-2"></i>Live Demo
                         </a>
                         {% endif %}
 
                         {% if project.github_url and project.github_url != '#' %}
-                        <a href="{{ project.github_url }}" target="_blank" class="action-btn btn-github">
-                            <i class="fab fa-github"></i>
-                            Source Code
+                        <a href="{{ project.github_url }}" target="_blank" class="btn btn-outline-primary btn-lg rounded-pill px-4">
+                            <i class="fab fa-github me-2"></i>Source Code
                         </a>
                         {% endif %}
                     </div>

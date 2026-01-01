@@ -104,31 +104,31 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <p class="mb-4" style="color: #cbd5e1; font-weight: 500;">Configure your primary communication channel to receive instant professional inquiries and system updates.</p>
+                            <p class="mb-4 text-secondary">Configure your primary communication channel to receive instant professional inquiries and system updates.</p>
                             
                             <form method="POST" action="/dashboard/smtp">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label" style="color: #000000;">SMTP Host</label>
+                                        <label class="form-label">SMTP Host</label>
                                         <input type="text" class="form-control" name="smtp_host" placeholder="smtp.gmail.com" value="{{ data.notifications.smtp.host if data.notifications and data.notifications.smtp else '' }}">
-                                        <small style="color: #333333;">e.g., smtp.gmail.com, smtp.outlook.com, smtp.mail.yahoo.com</small>
+                                        <small class="text-secondary">e.g., smtp.gmail.com, smtp.outlook.com, smtp.mail.yahoo.com</small>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label" style="color: #000000;">Port</label>
+                                        <label class="form-label">Port</label>
                                         <input type="number" class="form-control" name="smtp_port" placeholder="587" value="{{ data.notifications.smtp.port if data.notifications and data.notifications.smtp else '' }}">
-                                        <small style="color: #333333;">Use 587 for TLS (recommended) or 465 for SSL</small>
+                                        <small class="text-secondary">Use 587 for TLS (recommended) or 465 for SSL</small>
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label" style="color: #000000;">Email Address</label>
+                                        <label class="form-label">Email Address</label>
                                         <input type="email" class="form-control" name="smtp_email" placeholder="your-email@gmail.com" value="{{ data.notifications.smtp.email if data.notifications and data.notifications.smtp else '' }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label" style="color: #000000;">Password / App Password</label>
+                                        <label class="form-label">Password / App Password</label>
                                         <input type="password" class="form-control" name="smtp_password" placeholder="Enter password or app password">
-                                        <small style="color: #333333;">For Gmail: Always use App Password, not your personal password</small>
+                                        <small class="text-secondary">For Gmail: Always use App Password, not your personal password</small>
                                     </div>
                                 </div>
 
@@ -157,12 +157,12 @@
                             </form>
 
                             {% if smtp_status %}
-                            <div class="alert alert-success mt-3" role="alert" style="color: #000000;">
+                            <div class="alert alert-success mt-3" role="alert">
                                 <i class="fas fa-check-circle me-2"></i>
                                 Email notifications are <strong>enabled and active</strong>
                             </div>
                             {% else %}
-                            <div class="alert alert-warning mt-3" role="alert" style="color: #000000;">
+                            <div class="alert alert-warning mt-3" role="alert">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 Email notifications are currently <strong>disabled</strong> (complete the configuration above to enable)
                             </div>
@@ -178,24 +178,24 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <p class="mb-4" style="color: #cbd5e1; font-weight: 500;">Bridge your professional platform with instant messaging for immediate response capability.</p>
+                            <p class="mb-4 text-secondary">Bridge your professional platform with instant messaging for immediate response capability.</p>
                             
                             <form method="POST" action="/dashboard/telegram">
                                 <div class="mb-3">
-                                    <label class="form-label" style="color: #000000;">Telegram Bot Token</label>
+                                    <label class="form-label">Telegram Bot Token</label>
                                     <input type="password" class="form-control" name="bot_token" placeholder="Enter your Telegram Bot Token" value="{{ data.notifications.telegram.bot_token if data.notifications and data.notifications.telegram else '' }}">
-                                    <small class="d-block mt-2" style="color: #333333;">
+                                    <small class="d-block mt-2 text-secondary">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        <a href="https://core.telegram.org/bots#how-do-i-create-a-bot" target="_blank" style="color: #d4af37;">Learn how to get Bot Token</a>
+                                        <a href="https://core.telegram.org/bots#how-do-i-create-a-bot" target="_blank" style="color: var(--primary-color);">Learn how to get Bot Token</a>
                                     </small>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" style="color: #000000;">Telegram Chat ID</label>
+                                    <label class="form-label">Telegram Chat ID</label>
                                     <input type="text" class="form-control" name="chat_id" placeholder="Enter your Telegram Chat ID" value="{{ data.notifications.telegram.chat_id if data.notifications and data.notifications.telegram else '' }}">
-                                    <small class="d-block mt-2" style="color: #333333;">
+                                    <small class="d-block mt-2 text-secondary">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        <a href="https://stackoverflow.com/questions/32423837/telegram-bot-how-to-get-a-group-chat-id" target="_blank" style="color: #d4af37;">Learn how to get Chat ID</a>
+                                        <a href="https://stackoverflow.com/questions/32423837/telegram-bot-how-to-get-a-group-chat-id" target="_blank" style="color: var(--primary-color);">Learn how to get Chat ID</a>
                                     </small>
                                 </div>
 
@@ -224,12 +224,12 @@
                             </form>
 
                             {% if telegram_status %}
-                            <div class="alert alert-success mt-3" role="alert" style="color: #000000;">
+                            <div class="alert alert-success mt-3" role="alert">
                                 <i class="fas fa-check-circle me-2"></i>
                                 Telegram notifications are <strong>enabled</strong>
                             </div>
                             {% else %}
-                            <div class="alert alert-warning mt-3" role="alert" style="color: #000000;">
+                            <div class="alert alert-warning mt-3" role="alert">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 Telegram notifications are <strong>disabled</strong>
                             </div>

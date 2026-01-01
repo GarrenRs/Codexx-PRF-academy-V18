@@ -43,7 +43,165 @@
     "theme": "luxury-gold"
   },
   "clients": [],
+  "users": [
+    {
+      "id": 1,
+      "username": "Codexx",
+      "password_hash": "scrypt:32768:8:1$4iFkC7QOYThsBYTn$9b10458d5a5d8953cff2c6e5e61a0e1745b9876597da100bcd68a110b82be7222ef2af9904267afeab20190b3ed92f635e92e7643bb3aeb6d4b85ae4f6a7261e",
+      "email": "sarah@example.com",
+      "role": "user",
+      "is_demo": false,
+      "created_at": "2026-01-01 00:07:23"
+    }
+  ],
   "portfolios": {
+    "Codexx": {
+      "username": "Codexx",
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "static/assets/uploads/profile_Codexx_20260101_003643_photo_2025-12-31_21-17-48.jpg",
+      "skills": [],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Dashboard",
+          "short_description": "Choose a clear and descriptive project title",
+          "content": "Choose a clear and descriptive project title\r\n Short description: 1-2 lines only\r\n Full content: Explain the project in detail\r\n Add a clear and attractive image\r\n Add demo and code repository links\r\n Specify technologies used accurately",
+          "description": "Choose a clear and descriptive project title",
+          "image": "static/assets/uploads/project_Codexx_1_20260101_003052_create-web-automation-bot-in-4-hours-using-python-selenium.jpg",
+          "demo_url": "https://github.com/GarrenRs",
+          "github_url": "https://github.com/GarrenRs",
+          "technologies": [
+            "React"
+          ]
+        }
+      ],
+      "messages": [
+        {
+          "id": 1,
+          "name": "Dark Raeson",
+          "email": "raesondark@gmail.com",
+          "message": "We respect your privacy. Your information will only be used to respond to your inquiry.",
+          "date": "2026-01-01 00:33:04",
+          "read": true,
+          "ip": "105.235.129.88, 10.83.2.115",
+          "recipient": "Codexx",
+          "priority": "high",
+          "category": "general",
+          "request_type": "service",
+          "interest_area": "development",
+          "seriousness": "soon",
+          "contact_pref": "whatsapp",
+          "company": "Fzlz"
+        }
+      ],
+      "clients": [
+        {
+          "id": 1,
+          "name": "Dark Raeson",
+          "email": "raesondark@gmail.com",
+          "phone": "",
+          "company": "Fzlz",
+          "project_title": "uyya",
+          "project_description": "We respect your privacy. Your information will only be used to respond to your inquiry.",
+          "status": "lead",
+          "price": "25",
+          "deadline": "2026-01-01",
+          "start_date": "2026-01-06",
+          "notes": "",
+          "created_at": "2026-01-01 00:34:53"
+        }
+      ],
+      "contact": {
+        "email": "",
+        "phone": "",
+        "location": ""
+      },
+      "social": {
+        "linkedin": "",
+        "github": "",
+        "twitter": "",
+        "instagram": "",
+        "facebook": "https://web.facebook.com/Imed.lorganiste",
+        "youtube": "",
+        "behance": "",
+        "dribbble": ""
+      },
+      "settings": {
+        "theme": "silver-grey"
+      },
+      "visitors": {
+        "total": 7,
+        "today": [
+          {
+            "ip": "105.235.129.88, 10.83.11.57",
+            "timestamp": "2026-01-01 00:14:34",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.8.81",
+            "timestamp": "2026-01-01 00:23:30",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.5.121",
+            "timestamp": "2026-01-01 00:24:06",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.3.104",
+            "timestamp": "2026-01-01 00:24:50",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.0.252",
+            "timestamp": "2026-01-01 00:26:37",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.2.115",
+            "timestamp": "2026-01-01 00:28:01",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.4.100",
+            "timestamp": "2026-01-01 00:31:47",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.2.115",
+            "timestamp": "2026-01-01 00:33:04",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.8.81",
+            "timestamp": "2026-01-01 00:36:51",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.0.252",
+            "timestamp": "2026-01-01 00:42:11",
+            "date": "2026-01-01"
+          },
+          {
+            "ip": "105.235.129.88, 10.83.0.252",
+            "timestamp": "2026-01-01 00:44:08",
+            "date": "2026-01-01"
+          }
+        ],
+        "unique_ips": [
+          "105.235.129.88, 10.83.2.115",
+          "105.235.129.88, 10.83.3.104",
+          "105.235.129.88, 10.83.5.121",
+          "105.235.129.88, 10.83.8.81",
+          "105.235.129.88, 10.83.4.100",
+          "105.235.129.88, 10.83.0.252",
+          "105.235.129.88, 10.83.11.57"
+        ]
+      }
+    },
     "admin": {
       "name": "admin",
       "title": "Web Developer & Designer",
@@ -56,40 +214,9 @@
         "theme": "modern-dark"
       },
       "visitors": {
-        "total": 4,
-        "today": [
-          {
-            "ip": "105.235.128.227, 10.83.1.85",
-            "timestamp": "2025-12-31 21:01:27",
-            "date": "2025-12-31"
-          },
-          {
-            "ip": "105.235.128.227, 10.83.9.77",
-            "timestamp": "2025-12-31 21:02:01",
-            "date": "2025-12-31"
-          },
-          {
-            "ip": "105.235.128.227, 10.83.4.101",
-            "timestamp": "2025-12-31 21:02:44",
-            "date": "2025-12-31"
-          },
-          {
-            "ip": "105.235.128.227, 10.83.9.77",
-            "timestamp": "2025-12-31 21:07:23",
-            "date": "2025-12-31"
-          },
-          {
-            "ip": "105.235.128.227, 10.83.11.58",
-            "timestamp": "2025-12-31 21:07:24",
-            "date": "2025-12-31"
-          }
-        ],
-        "unique_ips": [
-          "105.235.128.227, 10.83.1.85",
-          "105.235.128.227, 10.83.4.101",
-          "105.235.128.227, 10.83.9.77",
-          "105.235.128.227, 10.83.11.58"
-        ]
+        "total": 0,
+        "today": [],
+        "unique_ips": []
       }
     }
   }

@@ -1553,17 +1553,29 @@ def dashboard_add_user():
             db.session.add(ws)
             db.session.commit()
             
-        db_user = User(
-            username=username,
-            password_hash=new_user['password_hash'],
-            email=email,
-            role=role,
-            workspace_id=ws.id
-        )
-        db.session.add(db_user)
+        # Check if user already exists in DB to avoid UniqueViolation
+        existing_db_user = User.query.filter_by(username=username).first()
+        if existing_db_user:
+            existing_db_user.password_hash = new_user['password_hash']
+            existing_db_user.email = email
+            existing_db_user.role = role
+        else:
+            db_user = User(
+                username=username,
+                password_hash=new_user['password_hash'],
+                email=email,
+                role=role,
+                workspace_id=ws.id
+            )
+            db.session.add(db_user)
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         app.logger.error(f"Error syncing user to DB: {str(e)}")
+        flash(f'Error syncing with database: {str(e)}', 'warning')
+
+    flash(f'User {username} added successfully.', 'success')
+    return redirect(url_for('dashboard_users'))
 
 @app.route('/dashboard/logout')
 @login_required

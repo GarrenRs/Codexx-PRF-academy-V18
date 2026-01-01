@@ -35,11 +35,14 @@
 </head>
 <body data-portfolio-theme="{{ current_theme }}">
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" id="mainNav">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}" title="Back to Codexx Academy">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('index') }}" title="Back to Codexx Academy">
                 <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" height="45" class="me-2">
-                <span>Codexx Academy</span>
+                <div class="brand-text">
+                    <span class="d-block lh-1">Codexx</span>
+                    <small class="d-block opacity-75" style="font-size: 0.65rem; letter-spacing: 1px;">ACADEMY</small>
+                </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -71,37 +74,34 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section id="home" class="hero-section d-flex align-items-center min-vh-100">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
                     <div class="hero-content">
-                        <h4 class="hero-subtitle mb-3">Professional Interface</h4>
-                        <h1 class="hero-title mb-4">{{ data.name or 'Your Name Here' }}</h1>
-                        <h3 class="hero-description mb-4">{{ data.title or 'Expert Professional' }}</h3>
-                        <p class="hero-text mb-5">{{ data.description or 'A trusted space where your professional needs meet tangible expertise and proven results.' }}</p>
-                        <div class="hero-buttons">
-                            <a href="#contact" class="btn btn-primary btn-lg me-3">
+                        <div class="hero-badge mb-3 d-inline-block px-3 py-1 rounded-pill">
+                            <i class="fas fa-shield-alt me-2"></i>Verified Professional
+                        </div>
+                        <h1 class="hero-title mb-4 display-3 fw-bold">{{ data.name or 'Your Name Here' }}</h1>
+                        <h3 class="hero-description mb-4 h4 text-primary">{{ data.title or 'Expert Professional' }}</h3>
+                        <p class="hero-text mb-5 lead">{{ data.description or 'A trusted space where your professional needs meet tangible expertise and proven results.' }}</p>
+                        <div class="hero-buttons d-flex gap-3">
+                            <a href="#contact" class="btn btn-primary btn-lg rounded-pill px-4">
                                 <i class="fas fa-paper-plane me-2"></i>Start a Conversation
                             </a>
-                            <a href="#projects" class="btn btn-outline-primary btn-lg">
-                                <i class="fas fa-th-list me-2"></i>Explore Projects
+                            <a href="#projects" class="btn btn-outline-primary btn-lg rounded-pill px-4">
+                                <i class="fas fa-th-list me-2"></i>View Portfolio
                             </a>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="hero-image text-center">
-                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Profile" class="img-fluid rounded-circle shadow-lg">
+                <div class="col-lg-6 text-center">
+                    <div class="hero-image-wrapper position-relative d-inline-block mt-5 mt-lg-0">
+                        <div class="hero-image-blob"></div>
+                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Profile" class="img-fluid rounded-circle shadow-2-strong position-relative z-index-1" style="width: 400px; height: 400px; object-fit: cover; border: 8px solid rgba(212, 175, 55, 0.1);">
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="scroll-indicator">
-            <a href="#about">
-                <i class="fas fa-chevron-down"></i>
-            </a>
         </div>
     </section>
 
@@ -437,73 +437,42 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer-section py-4">
+    <footer class="footer-section pt-5 pb-4">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="text-center">
-                        <p class="mb-0">&copy; 2026 Codexx. All rights reserved. | Premium Digital Solutions</p>
+            <div class="row align-items-center mb-4">
+                <div class="col-lg-4 text-center text-lg-start mb-4 mb-lg-0">
+                    <a class="navbar-brand fw-bold d-flex align-items-center justify-content-center justify-content-lg-start" href="#">
+                        <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo" height="50" class="me-3 footer-brand-logo">
+                        <div class="brand-text text-start">
+                            <span class="d-block lh-1 text-white">Codexx</span>
+                            <small class="d-block opacity-50 text-white" style="font-size: 0.65rem; letter-spacing: 2px;">ACADEMY</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-lg-4 text-center mb-4 mb-lg-0">
+                    <div class="footer-social-links d-flex justify-content-center gap-3">
+                        {% if data.social.linkedin %}<a href="{{ data.social.linkedin }}" target="_blank" class="social-link-item" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% endif %}
+                        {% if data.social.github %}<a href="{{ data.social.github }}" target="_blank" class="social-link-item" title="GitHub"><i class="fab fa-github"></i></a>{% endif %}
+                        {% if data.social.twitter %}<a href="{{ data.social.twitter }}" target="_blank" class="social-link-item" title="Twitter"><i class="fab fa-twitter"></i></a>{% endif %}
+                        {% if data.social.instagram %}<a href="{{ data.social.instagram }}" target="_blank" class="social-link-item" title="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}
                     </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <div class="social-links">
-                            {% if data.social %}
-                                {% if data.social.linkedin and data.social.linkedin != '' %}
-                                    <a href="{{ data.social.linkedin }}" class="social-link" target="_blank" rel="noopener noreferrer" title="LinkedIn">
-                                        <i class="fab fa-linkedin"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.github and data.social.github != '' %}
-                                    <a href="{{ data.social.github }}" class="social-link" target="_blank" rel="noopener noreferrer" title="GitHub">
-                                        <i class="fab fa-github"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.twitter and data.social.twitter != '' %}
-                                    <a href="{{ data.social.twitter }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Twitter">
-                                        <i class="fab fa-twitter"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.instagram and data.social.instagram != '' %}
-                                    <a href="{{ data.social.instagram }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Instagram">
-                                        <i class="fab fa-instagram"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.facebook and data.social.facebook != '' %}
-                                    <a href="{{ data.social.facebook }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Facebook">
-                                        <i class="fab fa-facebook"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.youtube and data.social.youtube != '' %}
-                                    <a href="{{ data.social.youtube }}" class="social-link" target="_blank" rel="noopener noreferrer" title="YouTube">
-                                        <i class="fab fa-youtube"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.behance and data.social.behance != '' %}
-                                    <a href="{{ data.social.behance }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Behance">
-                                        <i class="fab fa-behance"></i>
-                                    </a>
-                                {% endif %}
-                                {% if data.social.dribbble and data.social.dribbble != '' %}
-                                    <a href="{{ data.social.dribbble }}" class="social-link" target="_blank" rel="noopener noreferrer" title="Dribbble">
-                                        <i class="fab fa-dribbble"></i>
-                                    </a>
-                                {% endif %}
-                            {% else %}
-                                <!-- Default social links if no data -->
-                                <a href="#" class="social-link" title="LinkedIn">
-                                    <i class="fab fa-linkedin"></i>
-                                </a>
-                                <a href="#" class="social-link" title="GitHub">
-                                    <i class="fab fa-github"></i>
-                                </a>
-                                <a href="#" class="social-link" title="Twitter">
-                                    <i class="fab fa-twitter"></i>
-                                </a>
-                                <a href="#" class="social-link" title="Instagram">
-                                    <i class="fab fa-instagram"></i>
-                                </a>
-                            {% endif %}
-                        </div>
+                <div class="col-lg-4 text-center text-lg-end">
+                    <p class="text-white-50 mb-0 small">Premium Digital Presence</p>
+                    <div class="h6 fw-bold text-primary mb-0">Real Work. Real Proof.</div>
+                </div>
+            </div>
+            <hr class="border-secondary opacity-25">
+            <div class="row align-items-center pt-3">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="footer-bottom-text mb-0">© {{ current_year }} {{ data.name or 'Codexx Academy Member' }}. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="footer-bottom-links d-flex justify-content-center justify-content-md-end gap-3">
+                        <a href="/privacy" class="text-decoration-none text-white-50 small hover-white">Privacy Policy</a>
+                        <a href="/terms" class="text-decoration-none text-white-50 small hover-white">Terms of Service</a>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
