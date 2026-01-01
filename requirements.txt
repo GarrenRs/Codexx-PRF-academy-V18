@@ -14,3 +14,7 @@ requests==2.31.0
 alembic==1.13.0
 sqlalchemy==2.0.23
 python-dotenv==1.0.1
+alembic
+APScheduler
+python-dotenv
+requests

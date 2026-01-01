@@ -27,7 +27,8 @@ app.config.from_object(conf)
 # Ensure database URL is correctly formatted for SQLAlchemy
 db_url = app.config.get('SQLALCHEMY_DATABASE_URI')
 if db_url and db_url.startswith("postgres://"):
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
+        "postgres://", "postgresql://", 1)
 
 db.init_app(app)
 
@@ -40,6 +41,7 @@ with app.app_context():
     except Exception as e:
         app.logger.error(f"Database initialization error: {str(e)}")
 
+
 def get_current_theme():
     """Helper to get current user's theme for dashboard"""
     username = session.get('username')
@@ -48,6 +50,7 @@ def get_current_theme():
     user_data = load_data(username=username)
     return user_data.get('settings', {}).get('theme', 'luxury-gold')
 
+
 @app.context_processor
 def inject_global_vars():
     """Consolidated professional context processor for all templates"""
@@ -55,7 +58,7 @@ def inject_global_vars():
     current_theme = get_current_theme()
     is_demo_mode = session.get('is_demo_mode', True)
     is_admin = session.get('is_admin', False)
-    
+
     return {
         'current_theme': current_theme,
         'is_demo_mode': is_demo_mode,
@@ -67,6 +70,7 @@ def inject_global_vars():
         'get_clients_stats': lambda: get_clients_stats(username)
     }
 
+
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'static/assets/uploads'
@@ -76,13 +80,18 @@ app.config['SESSION_COOKIE_SECURE'] = True  # Use HTTPS in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
+
 # Security Configuration - Load from environment variables
 def get_admin_credentials():
     """Load admin credentials from environment variables safely"""
     return {
-        'username': os.environ.get('ADMIN_USERNAME', 'admin'),
-        'password_hash': generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Codexx@123456'))
+        'username':
+        os.environ.get('ADMIN_USERNAME', 'admin'),
+        'password_hash':
+        generate_password_hash(
+            os.environ.get('ADMIN_PASSWORD', 'Codexx@123456'))
     }
+
 
 ADMIN_CREDENTIALS = get_admin_credentials()
 
@@ -105,32 +114,38 @@ RATE_LIMIT_WINDOW = 60  # Per 60 seconds
 IP_LOG_FILE = 'security/ip_log.json'
 os.makedirs('security', exist_ok=True)
 
+
 def get_client_ip():
     """Get real client IP address"""
-    return request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+    return request.environ.get('HTTP_X_FORWARDED_FOR',
+                               request.environ.get('REMOTE_ADDR', 'unknown'))
+
 
 def check_rate_limit(endpoint='contact'):
     """Check if IP is within rate limit"""
     client_ip = get_client_ip()
     current_time = time.time()
-    
+
     if client_ip not in RATE_LIMIT_REQUESTS:
         RATE_LIMIT_REQUESTS[client_ip] = []
-    
+
     # Clean old requests outside the window
     RATE_LIMIT_REQUESTS[client_ip] = [
         (ts, ep) for ts, ep in RATE_LIMIT_REQUESTS[client_ip]
         if current_time - ts < RATE_LIMIT_WINDOW
     ]
-    
+
     # Check if limit exceeded
-    endpoint_requests = [ep for ts, ep in RATE_LIMIT_REQUESTS[client_ip] if ep == endpoint]
+    endpoint_requests = [
+        ep for ts, ep in RATE_LIMIT_REQUESTS[client_ip] if ep == endpoint
+    ]
     if len(endpoint_requests) >= RATE_LIMIT_MAX_REQUESTS:
         return False
-    
+
     # Add current request
     RATE_LIMIT_REQUESTS[client_ip].append((current_time, endpoint))
     return True
+
 
 def log_ip_activity(activity_type, details=''):
     """Log IP activity for security tracking"""
@@ -143,23 +158,24 @@ def log_ip_activity(activity_type, details=''):
             'details': details,
             'user_agent': request.headers.get('User-Agent', 'Unknown')[:100]
         }
-        
+
         # Load existing logs
         try:
             with open(IP_LOG_FILE, 'r', encoding='utf-8') as f:
                 logs = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             logs = []
-        
+
         logs.append(log_data)
-        
+
         # Keep only last 1000 logs
         logs = logs[-1000:]
-        
+
         with open(IP_LOG_FILE, 'w', encoding='utf-8') as f:
             json.dump(logs, f, ensure_ascii=False, indent=2)
     except Exception as e:
         app.logger.error(f"Error logging IP activity: {str(e)}")
+
 
 # LIVE DEMO EDITION: Demo user credentials (restricted access for live preview)
 DEMO_USER_CREDENTIALS = {
@@ -168,10 +184,13 @@ DEMO_USER_CREDENTIALS = {
     'is_demo': True
 }
 
+
 # Telegram Bot Configuration helper functions
 def load_telegram_config():
     """Load global Telegram configuration from environment variables only"""
-    return os.environ.get('TELEGRAM_BOT_TOKEN', ''), os.environ.get('TELEGRAM_CHAT_ID', '')
+    return os.environ.get('TELEGRAM_BOT_TOKEN',
+                          ''), os.environ.get('TELEGRAM_CHAT_ID', '')
+
 
 def get_telegram_credentials(username=None):
     """Get Telegram credentials - user-specific or global fallback"""
@@ -179,7 +198,8 @@ def get_telegram_credentials(username=None):
         # Get user-specific credentials from their data
         try:
             user_data = load_data(username=username)
-            if 'notifications' in user_data and 'telegram' in user_data['notifications']:
+            if 'notifications' in user_data and 'telegram' in user_data[
+                    'notifications']:
                 telegram_cfg = user_data['notifications']['telegram']
                 bot_token = telegram_cfg.get('bot_token', '')
                 chat_id = telegram_cfg.get('chat_id', '')
@@ -187,10 +207,11 @@ def get_telegram_credentials(username=None):
                     return bot_token, chat_id
         except:
             pass
-    
+
     # Fall back to global config
     bot_token, chat_id = load_telegram_config()
     return bot_token, chat_id
+
 
 # Telegram Bot Configuration - loaded at startup
 TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID = get_telegram_credentials()
@@ -204,13 +225,18 @@ def load_smtp_config(username=None):
     if username:
         try:
             user_data = load_data(username=username)
-            if 'notifications' in user_data and 'smtp' in user_data['notifications']:
+            if 'notifications' in user_data and 'smtp' in user_data[
+                    'notifications']:
                 smtp_cfg = user_data['notifications']['smtp']
-                if all([smtp_cfg.get('host'), smtp_cfg.get('email'), smtp_cfg.get('password')]):
+                if all([
+                        smtp_cfg.get('host'),
+                        smtp_cfg.get('email'),
+                        smtp_cfg.get('password')
+                ]):
                     return smtp_cfg
         except:
             pass
-    
+
     # Fall back to global SMTP config
     try:
         if os.path.exists('smtp_config.json'):
@@ -237,25 +263,30 @@ def send_email(recipient, subject, body, html=False, username=None):
     """Send email using SMTP - user-specific or global config"""
     try:
         smtp_config = load_smtp_config(username=username)
-        if not all([smtp_config.get('host'), smtp_config.get('port'), 
-                    smtp_config.get('email'), smtp_config.get('password')]):
+        if not all([
+                smtp_config.get('host'),
+                smtp_config.get('port'),
+                smtp_config.get('email'),
+                smtp_config.get('password')
+        ]):
             return False
-        
+
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = smtp_config.get('email')
         msg['To'] = recipient
-        
+
         if html:
             msg.attach(MIMEText(body, 'html'))
         else:
             msg.attach(MIMEText(body, 'plain'))
-        
-        with smtplib.SMTP(smtp_config.get('host'), int(smtp_config.get('port'))) as server:
+
+        with smtplib.SMTP(smtp_config.get('host'),
+                          int(smtp_config.get('port'))) as server:
             server.starttls()
             server.login(smtp_config.get('email'), smtp_config.get('password'))
             server.send_message(msg)
-        
+
         return True
     except Exception as e:
         app.logger.error(f"Error sending email: {str(e)}")
@@ -275,7 +306,7 @@ def load_data(username=None):
         if os.path.exists('data.json'):
             with open('data.json', 'r', encoding='utf-8') as file:
                 data = json.load(file)
-        
+
         # If a username is provided, isolate their portfolio data
         if username:
             portfolios = data.get('portfolios', {})
@@ -291,13 +322,20 @@ def load_data(username=None):
                     'projects': [],
                     'messages': [],
                     'clients': [],
-                    'settings': {'theme': 'luxury-gold'},
-                    'visitors': {'total': 0, 'today': [], 'unique_ips': []}
+                    'settings': {
+                        'theme': 'luxury-gold'
+                    },
+                    'visitors': {
+                        'total': 0,
+                        'today': [],
+                        'unique_ips': []
+                    }
                 }
         return data
     except Exception as e:
         app.logger.error(f"Error loading data: {str(e)}")
         return {}
+
 
 def save_data(user_data, username=None):
     """Save portfolio data with multi-tenant isolation"""
@@ -307,7 +345,7 @@ def save_data(user_data, username=None):
         if os.path.exists('data.json'):
             with open('data.json', 'r', encoding='utf-8') as file:
                 all_data = json.load(file)
-        
+
         if username:
             # Isolate this user's data under their username key
             if 'portfolios' not in all_data:
@@ -322,6 +360,7 @@ def save_data(user_data, username=None):
     except Exception as e:
         app.logger.error(f"Error saving data: {str(e)}")
 
+
 @app.route('/portfolio/<username>')
 def user_portfolio(username):
     """Public view of a specific user's portfolio with theme isolation"""
@@ -329,13 +368,23 @@ def user_portfolio(username):
     # Check if user exists in main data
     all_data = load_data()
     users = all_data.get('users', [])
-    if not any(u['username'] == username for u in users) and username != 'admin':
+    if not any(u['username'] == username
+               for u in users) and username != 'admin':
         return render_template('404.html'), 404
-    
+
+    # Check if user is an admin - if so, redirect to home page as requested
+    is_admin_user = any(u['username'] == username and u.get('role') == 'admin'
+                        for u in users) or username == 'admin'
+    if is_admin_user:
+        return redirect(url_for('landing'))
+
     track_visitor(username=username)
     # Theme isolation: read theme from user settings, fallback to default
     current_theme = user_data.get('settings', {}).get('theme', 'luxury-gold')
-    return render_template('index.html', data=user_data, is_public=True, current_theme=current_theme)
+    return render_template('index.html',
+                           data=user_data,
+                           is_public=True,
+                           current_theme=current_theme)
 
 
 def create_backup(manual=True):
@@ -343,29 +392,29 @@ def create_backup(manual=True):
     try:
         if not os.path.exists('data.json'):
             return None
-        
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_filename = f'backup_{timestamp}.json'
         backup_path = os.path.join('backups', backup_filename)
-        
+
         with open('data.json', 'r', encoding='utf-8') as original:
             backup_content = original.read()
             with open(backup_path, 'w', encoding='utf-8') as backup:
                 backup.write(backup_content)
-        
+
         file_size = os.path.getsize(backup_path) / 1024
-        
+
         backup_info = {
             'filename': backup_filename,
             'timestamp': datetime.now().isoformat(),
             'size_kb': round(file_size, 2),
             'type': 'manual' if manual else 'automatic'
         }
-        
+
         save_backup_metadata(backup_info)
-        
+
         keep_recent_backups(max_backups=20)
-        
+
         return backup_info
     except Exception as e:
         app.logger.error(f"Error creating backup: {str(e)}")
@@ -377,13 +426,13 @@ def save_backup_metadata(backup_info):
     try:
         metadata_file = 'backups/backups.json'
         backups_list = []
-        
+
         if os.path.exists(metadata_file):
             with open(metadata_file, 'r', encoding='utf-8') as f:
                 backups_list = json.load(f)
-        
+
         backups_list.append(backup_info)
-        
+
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(backups_list, f, ensure_ascii=False, indent=2)
     except Exception as e:
@@ -397,7 +446,9 @@ def get_backups_list():
         if os.path.exists(metadata_file):
             with open(metadata_file, 'r', encoding='utf-8') as f:
                 backups = json.load(f)
-                return sorted(backups, key=lambda x: x['timestamp'], reverse=True)
+                return sorted(backups,
+                              key=lambda x: x['timestamp'],
+                              reverse=True)
         return []
     except Exception as e:
         app.logger.error(f"Error reading backups list: {str(e)}")
@@ -414,7 +465,7 @@ def keep_recent_backups(max_backups=20):
                 backup_path = os.path.join('backups', backup['filename'])
                 if os.path.exists(backup_path):
                     os.remove(backup_path)
-            
+
             updated_backups = backups[:max_backups]
             with open('backups/backups.json', 'w', encoding='utf-8') as f:
                 json.dump(updated_backups, f, ensure_ascii=False, indent=2)
@@ -437,24 +488,49 @@ def reset_demo_data():
     try:
         with app.app_context():
             default_demo_data = {
-                'name': 'Demo Portfolio - Codexx',
-                'title': 'Web Developer & Designer',
-                'description': 'Experience the power of Codexx Academy Platform with this interactive demo',
-                'photo': 'static/assets/profile-placeholder.svg',
-                'about': 'Welcome to the Codexx Academy Platform! This is a live demo showcasing all the features available in our professional portfolio management system. Feel free to explore and customize this demo to see how your portfolio would look.',
-                'skills': [
-                    {'name': 'Web Development', 'level': 90},
-                    {'name': 'UI/UX Design', 'level': 85},
-                    {'name': 'JavaScript', 'level': 88},
-                    {'name': 'React.js', 'level': 85},
-                    {'name': 'Python', 'level': 80}
-                ],
-                'projects': load_data().get('projects', []),
-                'contact': {'email': 'demo@codexx.com', 'phone': '+1 234 567 8900', 'location': 'San Francisco, CA'},
+                'name':
+                'Demo Portfolio - Codexx',
+                'title':
+                'Web Developer & Designer',
+                'description':
+                'Experience the power of Codexx Academy Platform with this interactive demo',
+                'photo':
+                'static/assets/profile-placeholder.svg',
+                'about':
+                'Welcome to the Codexx Academy Platform! This is a live demo showcasing all the features available in our professional portfolio management system. Feel free to explore and customize this demo to see how your portfolio would look.',
+                'skills': [{
+                    'name': 'Web Development',
+                    'level': 90
+                }, {
+                    'name': 'UI/UX Design',
+                    'level': 85
+                }, {
+                    'name': 'JavaScript',
+                    'level': 88
+                }, {
+                    'name': 'React.js',
+                    'level': 85
+                }, {
+                    'name': 'Python',
+                    'level': 80
+                }],
+                'projects':
+                load_data().get('projects', []),
+                'contact': {
+                    'email': 'demo@codexx.com',
+                    'phone': '+1 234 567 8900',
+                    'location': 'San Francisco, CA'
+                },
                 'social': {},
                 'messages': [],
-                'visitors': {'total': 0, 'today': [], 'unique_ips': []},
-                'settings': {'theme': 'luxury-gold'},
+                'visitors': {
+                    'total': 0,
+                    'today': [],
+                    'unique_ips': []
+                },
+                'settings': {
+                    'theme': 'luxury-gold'
+                },
                 'clients': []
             }
             with open('data.json', 'w', encoding='utf-8') as f:
@@ -463,25 +539,21 @@ def reset_demo_data():
         app.logger.error(f"Demo data reset failed: {str(e)}")
 
 
-scheduler.add_job(
-    scheduled_backup,
-    'cron',
-    hour='*',
-    minute=0,
-    id='daily_backup',
-    name='Hourly backup',
-    replace_existing=True
-)
+scheduler.add_job(scheduled_backup,
+                  'cron',
+                  hour='*',
+                  minute=0,
+                  id='daily_backup',
+                  name='Hourly backup',
+                  replace_existing=True)
 
-scheduler.add_job(
-    reset_demo_data,
-    'cron',
-    hour='*',
-    minute=0,
-    id='demo_reset',
-    name='Demo data hourly reset',
-    replace_existing=True
-)
+scheduler.add_job(reset_demo_data,
+                  'cron',
+                  hour='*',
+                  minute=0,
+                  id='demo_reset',
+                  name='Demo data hourly reset',
+                  replace_existing=True)
 
 
 def login_required(f):
@@ -496,6 +568,7 @@ def login_required(f):
 
     return decorated_function
 
+
 def admin_required(f):
     """Decorator to require admin role"""
 
@@ -508,8 +581,10 @@ def admin_required(f):
 
     return decorated_function
 
+
 def disable_in_demo(f):
     """Decorator to disable actions in demo mode with specific endpoint rules"""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Refresh session data from data.json if user is logged in
@@ -529,37 +604,53 @@ def disable_in_demo(f):
         if session.get('is_demo_mode'):
             # FULL CONTROL endpoints (Allowed for both GET and POST)
             allowed_endpoints = [
-                'dashboard', 'dashboard_general', 'dashboard_about', 
-                'dashboard_skills', 'dashboard_projects', 'dashboard_add_project', 
-                'dashboard_edit_project', 'dashboard_delete_project',
-                'dashboard_contact', 'dashboard_messages', 'dashboard_view_message',
-                'dashboard_mark_read', 'dashboard_delete_message', 'dashboard_change_password',
-                'dashboard_users' # Allow viewing users in demo mode, but POST is blocked by logic
+                'dashboard',
+                'dashboard_general',
+                'dashboard_about',
+                'dashboard_skills',
+                'dashboard_projects',
+                'dashboard_add_project',
+                'dashboard_edit_project',
+                'dashboard_delete_project',
+                'dashboard_contact',
+                'dashboard_messages',
+                'dashboard_view_message',
+                'dashboard_mark_read',
+                'dashboard_delete_message',
+                'dashboard_change_password',
+                'dashboard_users'  # Allow viewing users in demo mode, but POST is blocked by logic
             ]
-            
+
             # BLOCKED endpoints (Blocked even for GET if they are sensitive)
             # Or restricted to GET only for others
             restricted_endpoints = [
-                'dashboard_social', 'dashboard_clients', 'dashboard_add_client', 
-                'dashboard_edit_client', 'dashboard_view_client', 'dashboard_delete_client',
+                'dashboard_social', 'dashboard_clients',
+                'dashboard_add_client', 'dashboard_edit_client',
+                'dashboard_view_client', 'dashboard_delete_client',
                 'dashboard_settings', 'dashboard_smtp', 'dashboard_telegram',
-                'view_backups', 'create_manual_backup', 'download_backup', 'delete_backup',
-                'export_data', 'toggle_user_demo'
+                'view_backups', 'create_manual_backup', 'download_backup',
+                'delete_backup', 'export_data', 'toggle_user_demo'
             ]
-            
+
             current_endpoint = request.endpoint
-            
+
             if current_endpoint in restricted_endpoints and request.method == 'POST':
-                flash('⚠️ Pro feature: This action requires a professional plan.', 'warning')
+                flash(
+                    '⚠️ Pro feature: This action requires a professional plan.',
+                    'warning')
                 return redirect(request.referrer or url_for('dashboard'))
-            
+
             # Extra security: prevent users from reaching sensitive admin settings even on GET
-            sensitive_get_endpoints = ['dashboard_smtp', 'dashboard_telegram', 'view_backups']
+            sensitive_get_endpoints = [
+                'dashboard_smtp', 'dashboard_telegram', 'view_backups'
+            ]
             if current_endpoint in sensitive_get_endpoints:
-                flash('⚠️ Pro feature: Access restricted in demo mode.', 'warning')
+                flash('⚠️ Pro feature: Access restricted in demo mode.',
+                      'warning')
                 return redirect(url_for('dashboard'))
-                
+
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -567,7 +658,9 @@ def disable_in_demo(f):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """Disabled registration route"""
-    flash('Registration is currently disabled. Please contact the administrator.', 'warning')
+    flash(
+        'Registration is currently disabled. Please contact the administrator.',
+        'warning')
     return redirect(url_for('login'))
 
 
@@ -591,24 +684,27 @@ def dashboard_view_user(user_id):
     data = load_data()
     users = data.get('users', [])
     target_user = next((u for u in users if u.get('id') == user_id), None)
-    
+
     if not target_user:
         flash('User not found.', 'error')
         return redirect(url_for('dashboard_users'))
-    
+
     # Load user's portfolio data for stats
     username = target_user['username']
     user_portfolio_data = load_data(username=username)
-    
+
     stats = {
         'projects_count': len(user_portfolio_data.get('projects', [])),
         'skills_count': len(user_portfolio_data.get('skills', [])),
         'clients_count': len(user_portfolio_data.get('clients', [])),
         'messages_count': len(user_portfolio_data.get('messages', [])),
-        'visitors_total': user_portfolio_data.get('visitors', {}).get('total', 0)
+        'visitors_total': user_portfolio_data.get('visitors',
+                                                  {}).get('total', 0)
     }
-    
-    return render_template('dashboard/view_user.html', target_user=target_user, stats=stats)
+
+    return render_template('dashboard/view_user.html',
+                           target_user=target_user,
+                           stats=stats)
 
 
 @app.route('/dashboard/user/<int:user_id>/toggle-demo', methods=['POST'])
@@ -619,13 +715,13 @@ def toggle_user_demo(user_id):
     """Toggle demo mode for a specific user"""
     data = load_data()
     users = data.get('users', [])
-    
+
     for user in users:
         if user.get('id') == user_id:
             user['is_demo'] = not user.get('is_demo', True)
             flash(f'User {user["username"]} access updated.', 'success')
             break
-    
+
     save_data(data)
     return redirect(url_for('dashboard_view_user', user_id=user_id))
 
@@ -638,23 +734,23 @@ def delete_user(user_id):
     """Delete a user and their portfolio data"""
     data = load_data()
     users = data.get('users', [])
-    
+
     target_user = next((u for u in users if u.get('id') == user_id), None)
     if not target_user:
         flash('User not found.', 'error')
         return redirect(url_for('dashboard_users'))
-    
+
     if target_user['username'] == 'admin':
         flash('Cannot delete admin user.', 'error')
         return redirect(url_for('dashboard_users'))
-    
+
     # Remove from users list
     data['users'] = [u for u in users if u.get('id') != user_id]
-    
+
     # Remove their portfolio data
     if 'portfolios' in data and target_user['username'] in data['portfolios']:
         del data['portfolios'][target_user['username']]
-    
+
     save_data(data)
     flash(f'User {target_user["username"]} has been deleted.', 'success')
     return redirect(url_for('dashboard_users'))
@@ -666,7 +762,7 @@ def send_telegram_notification(message_text, username=None):
     bot_token, chat_id = get_telegram_credentials(username=username)
     if not bot_token or not chat_id:
         return False
-    
+
     try:
         # Check if message_text is already formatted (for contact forms) or needs formatting (for client updates)
         if isinstance(message_text, dict):
@@ -688,14 +784,14 @@ def send_telegram_notification(message_text, username=None):
         else:
             # New format (already formatted string for client updates)
             telegram_message = message_text
-        
+
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         payload = {
             'chat_id': chat_id,
             'text': telegram_message,
             'parse_mode': 'HTML'
         }
-        
+
         # Send in background thread to not block the request
         response = requests.post(url, json=payload, timeout=5)
         return response.status_code == 200
@@ -709,35 +805,37 @@ def send_telegram_event_notification(event_type, details=None, username=None):
     bot_token, chat_id = get_telegram_credentials(username=username)
     if not bot_token or not chat_id:
         return False
-    
+
     try:
         event_messages = {
-            'new_message': f"""📨 <b>New Contact Message</b>
+            'new_message':
+            f"""📨 <b>New Contact Message</b>
 {details}
 ⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
-            
-            'new_project': f"""🚀 <b>New Project Added</b>
+            'new_project':
+            f"""🚀 <b>New Project Added</b>
 📌 {details}
 ⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
-            
-            'project_updated': f"""✏️ <b>Project Updated</b>
+            'project_updated':
+            f"""✏️ <b>Project Updated</b>
 📌 {details}
 ⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
-            
-            'login_attempt': f"""🔐 <b>Dashboard Login</b>
+            'login_attempt':
+            f"""🔐 <b>Dashboard Login</b>
 👤 User: {details}
 ⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
         }
-        
-        message_text = event_messages.get(event_type, f"{event_type}: {details}")
-        
+
+        message_text = event_messages.get(event_type,
+                                          f"{event_type}: {details}")
+
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         payload = {
             'chat_id': chat_id,
             'text': message_text,
             'parse_mode': 'HTML'
         }
-        
+
         response = requests.post(url, json=payload, timeout=5)
         return response.status_code == 200
     except Exception as e:
@@ -747,7 +845,8 @@ def send_telegram_event_notification(event_type, details=None, username=None):
 
 def send_event_notification_async(event_type, details=None, username=None):
     """Send event notification asynchronously - per-user"""
-    thread = threading.Thread(target=send_telegram_event_notification, args=(event_type, details, username))
+    thread = threading.Thread(target=send_telegram_event_notification,
+                              args=(event_type, details, username))
     thread.daemon = True
     thread.start()
 
@@ -756,12 +855,18 @@ def send_telegram_notification_async(message_text, username=None):
     """Send Telegram notification asynchronously"""
     bot_token, chat_id = get_telegram_credentials(username=username)
     if bot_token and chat_id:
-        thread = threading.Thread(target=send_telegram_notification, args=(message_text, username))
+        thread = threading.Thread(target=send_telegram_notification,
+                                  args=(message_text, username))
         thread.daemon = True
         thread.start()
 
 
-def save_message(name, email, message, username=None, priority='normal', extra_data=None):
+def save_message(name,
+                 email,
+                 message,
+                 username=None,
+                 priority='normal',
+                 extra_data=None):
     """Save contact message per user and send notifications with priority"""
     if username is None:
         # Try to get from session, otherwise default to admin
@@ -769,7 +874,7 @@ def save_message(name, email, message, username=None, priority='normal', extra_d
         if not username:
             # For public contact forms without identified user, route to admin
             username = ADMIN_CREDENTIALS['username']
-    
+
     data = load_data(username=username)
     if 'messages' not in data:
         data['messages'] = []
@@ -790,22 +895,24 @@ def save_message(name, email, message, username=None, priority='normal', extra_d
         'priority': priority,  # Add priority field (high, normal, low)
         'category': 'general'  # Default category for future filtering
     }
-    
+
     # Add extra data if provided
     if extra_data:
         new_message.update(extra_data)
 
     data['messages'].append(new_message)
     save_data(data, username=username)
-    
+
     # Log the activity
     log_ip_activity('contact_message', f"From: {email} to {username}")
-    
+
     # Send Telegram notification to the recipient user (using their config)
-    request_type = extra_data.get('request_type', 'N/A') if extra_data else 'N/A'
-    interest_area = extra_data.get('interest_area', 'N/A') if extra_data else 'N/A'
+    request_type = extra_data.get('request_type',
+                                  'N/A') if extra_data else 'N/A'
+    interest_area = extra_data.get('interest_area',
+                                   'N/A') if extra_data else 'N/A'
     company = extra_data.get('company', 'N/A') if extra_data else 'N/A'
-    
+
     notification_msg = f"""
 📨 <b>New Contact Message</b>
 
@@ -821,7 +928,7 @@ def save_message(name, email, message, username=None, priority='normal', extra_d
 ⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
     send_telegram_notification_async(notification_msg, username=username)
-    
+
     # Send email notification to the recipient user (using their config)
     smtp_config = load_smtp_config(username=username)
     if smtp_config.get('email'):
@@ -845,8 +952,12 @@ def save_message(name, email, message, username=None, priority='normal', extra_d
             </body>
         </html>
         """
-        send_email(smtp_config.get('email'), email_subject, email_body, html=True, username=username)
-    
+        send_email(smtp_config.get('email'),
+                   email_subject,
+                   email_body,
+                   html=True,
+                   username=username)
+
     return new_id
 
 
@@ -861,7 +972,7 @@ def track_visitor(username=None):
     """Track visitor with per-user isolation"""
     if username is None:
         username = session.get('username', 'public')
-    
+
     # Track per user (load and save user-specific visitor data)
     data = load_data(username=username)
     if 'visitors' not in data:
@@ -872,7 +983,10 @@ def track_visitor(username=None):
     today = datetime.now().strftime('%Y-%m-%d')
 
     # Only count unique IPs per day
-    today_ips = [v.get('ip') for v in data['visitors'].get('today', []) if v.get('date') == today]
+    today_ips = [
+        v.get('ip') for v in data['visitors'].get('today', [])
+        if v.get('date') == today
+    ]
     if visitor_ip not in today_ips:
         data['visitors']['total'] = data['visitors'].get('total', 0) + 1
 
@@ -881,9 +995,12 @@ def track_visitor(username=None):
         v for v in data['visitors'].get('today', []) if v.get('date') == today
     ]
     data['visitors']['today'].append({
-        'ip': visitor_ip,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'date': today
+        'ip':
+        visitor_ip,
+        'timestamp':
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'date':
+        today
     })
 
     # Track unique IPs
@@ -895,7 +1012,7 @@ def track_visitor(username=None):
     data['visitors']['unique_ips'] = list(unique_ips_set)
 
     save_data(data, username=username)
-    
+
     return data['visitors']['total']
 
 
@@ -948,18 +1065,19 @@ def dashboard_chat(user_id=None):
     current_user_id = str(session.get('user_id'))
     username = session.get('username')
     is_admin = session.get('is_admin')
-    
+
     # For admin, if no user_id is provided, show the user list
     if is_admin and not user_id:
         # Fetch all users except admin to start conversations
         users = User.query.filter(User.username != 'admin').all()
         return render_template('dashboard/chat_list.html', users=users)
-        
+
     # If a user is accessing, their user_id is always their own, unless they're admin
     target_user_id = user_id if is_admin else current_user_id
-    
+
     # Internal chat routes are deprecated. Redirecting to consolidated messages.
     return redirect(url_for('dashboard_messages'))
+
 
 @app.route('/dashboard/chat/clear/<user_id>', methods=['POST'])
 @login_required
@@ -967,6 +1085,7 @@ def dashboard_chat(user_id=None):
 def dashboard_clear_chat(user_id):
     """Clear internal chat history (Legacy)"""
     return redirect(url_for('dashboard_messages'))
+
 
 @app.route('/contact/academy', methods=['POST'])
 def contact_academy():
@@ -976,12 +1095,12 @@ def contact_academy():
         name = request.form.get('name')
         email = request.form.get('email')
         message_content = request.form.get('message')
-        
+
         # Check session
         user_id = session.get('user_id')
         username = session.get('username')
         user_email = session.get('email')
-        
+
         # If logged in, override name and email from session
         if user_id:
             name = username
@@ -996,14 +1115,12 @@ def contact_academy():
             email = 'no-email@codexx.academy'
 
         # 1. Save to Database
-        new_message = Message(
-            name=name or 'Guest',
-            email=email,
-            message=message_content,
-            is_internal=False,
-            sender_id=user_id,
-            created_at=datetime.utcnow()
-        )
+        new_message = Message(name=name or 'Guest',
+                              email=email,
+                              message=message_content,
+                              is_internal=False,
+                              sender_id=user_id,
+                              created_at=datetime.utcnow())
         db.session.add(new_message)
         db.session.commit()
 
@@ -1014,15 +1131,18 @@ def contact_academy():
 
         # 3. Email Notification (SMTP Integration)
         email_body = f"New inquiry from {name} ({email}):\n\n{message_content}"
-        send_email(os.environ.get('ADMIN_EMAIL', 'admin@codexx.academy'), 
-                  "New Academy Inquiry", email_body, username='admin')
+        send_email(os.environ.get('ADMIN_EMAIL', 'admin@codexx.academy'),
+                   "New Academy Inquiry",
+                   email_body,
+                   username='admin')
 
-        flash('Success! Your message has been delivered to the Academy team.', 'success')
+        flash('Success! Your message has been delivered to the Academy team.',
+              'success')
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error in contact_academy: {str(e)}")
         flash('System error. Please try again later.', 'danger')
-    
+
     return redirect(url_for('index', _anchor='academy-contact'))
 
 
@@ -1059,14 +1179,6 @@ def file_too_large(e):
 
 
 # Public routes
-@app.route('/landing')
-def landing():
-    """Landing/Marketing page for the platform"""
-    data = load_data()
-    portfolios = data.get('portfolios', {})
-    return render_template('landing.html', portfolios=portfolios)
-
-
 @app.route('/')
 def index():
     """Home/Landing page with Academy branding and user portfolios"""
@@ -1074,10 +1186,17 @@ def index():
     username = session.get('username')
     data = load_data()
     portfolios = data.get('portfolios', {})
-    return render_template('landing.html', 
-                         portfolios=portfolios, 
-                         is_logged_in=is_logged_in, 
-                         username=username)
+    return render_template('landing.html',
+                           portfolios=portfolios,
+                           is_logged_in=is_logged_in,
+                           username=username,
+                           data=data)
+
+
+@app.route('/landing')
+def landing():
+    """Redirect to main index for consistency"""
+    return redirect(url_for('index'))
 
 
 @app.route('/privacy')
@@ -1085,42 +1204,76 @@ def privacy():
     """Privacy Policy page"""
     return render_template('pages/privacy.html')
 
+
 @app.route('/terms')
 def terms():
     """Terms of Service page"""
     return render_template('pages/terms.html')
+
 
 @app.route('/about')
 def about():
     """About Academy page"""
     return render_template('pages/about.html')
 
+
 @app.route('/verification')
 def verification():
     """Verification Process page"""
     return render_template('pages/verification.html')
+
 
 @app.route('/mastery')
 def mastery():
     """Mastery Guide page"""
     return render_template('pages/mastery.html')
 
+
 @app.route('/standards')
 def standards():
     """Elite Standards page"""
     return render_template('pages/standards.html')
+
 
 @app.route('/security-audit')
 def security_audit():
     """Security Audit page"""
     return render_template('pages/security.html')
 
+
 @app.route('/catalog')
 def catalog():
-    """Display all user portfolios"""
+    """Public portfolios directory with status classification"""
     data = load_data()
     portfolios = data.get('portfolios', {})
-    return render_template('catalog.html', portfolios=portfolios, is_public=True)
+    users = data.get('users', [])
+
+    # Map user roles/demo status to classify portfolios
+    user_status_map = {u['username']: u for u in users}
+
+    classified_portfolios = {}
+    for username, port in portfolios.items():
+        # Skip admin from catalog as they don't have a portfolio
+        if username == 'admin':
+            continue
+
+        user_info = user_status_map.get(username, {})
+        is_demo = user_info.get('is_demo', True)
+
+        if username == 'admin':
+            status = 'verified'
+        elif not is_demo:
+            status = 'verified'
+        else:
+            # For demo users, determine if new or building
+            has_projects = len(port.get('projects', [])) > 0
+            status = 'in-progress' if has_projects else 'new'
+
+        classified_portfolios[username] = {'data': port, 'status': status}
+
+    return render_template('catalog.html',
+                           portfolios=classified_portfolios,
+                           is_public=True)
 
 
 def send_confirmation_email(name, email, portfolio_owner_email):
@@ -1161,26 +1314,33 @@ def send_confirmation_email(name, email, portfolio_owner_email):
             </div>
         </div>
         """
-        
+
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = portfolio_owner_email or 'noreply@codexx.com'
         msg['To'] = email
         msg.attach(MIMEText(html_body, 'html'))
-        
+
         # Try to send via SMTP if configured, otherwise skip
         try:
             smtp_config = load_smtp_config()
-            if all([smtp_config.get('host'), smtp_config.get('port'), 
-                    smtp_config.get('email'), smtp_config.get('password')]):
-                with smtplib.SMTP(smtp_config.get('host'), int(smtp_config.get('port'))) as server:
+            if all([
+                    smtp_config.get('host'),
+                    smtp_config.get('port'),
+                    smtp_config.get('email'),
+                    smtp_config.get('password')
+            ]):
+                with smtplib.SMTP(smtp_config.get('host'),
+                                  int(smtp_config.get('port'))) as server:
                     server.starttls()
-                    server.login(smtp_config.get('email'), smtp_config.get('password'))
+                    server.login(smtp_config.get('email'),
+                                 smtp_config.get('password'))
                     server.send_message(msg)
                 return True
         except Exception as e:
-            app.logger.debug(f"Could not send confirmation email via SMTP: {str(e)}")
-        
+            app.logger.debug(
+                f"Could not send confirmation email via SMTP: {str(e)}")
+
         return False
     except Exception as e:
         app.logger.error(f"Error preparing confirmation email: {str(e)}")
@@ -1195,15 +1355,19 @@ def contact():
     if honeypot:
         # Bot detected - silently fail
         log_ip_activity('bot_detected', 'Contact form honeypot triggered')
-        flash('Thank you for your message! I will get back to you soon.', 'success')
+        flash('Thank you for your message! I will get back to you soon.',
+              'success')
         return redirect(url_for('index') + '#contact')
-    
+
     # Check rate limiting
     if not check_rate_limit('contact'):
-        log_ip_activity('rate_limit_exceeded', 'Contact form submissions exceeded')
-        flash('Too many messages. Please wait a moment before sending another message.', 'error')
+        log_ip_activity('rate_limit_exceeded',
+                        'Contact form submissions exceeded')
+        flash(
+            'Too many messages. Please wait a moment before sending another message.',
+            'error')
         return redirect(url_for('index') + '#contact')
-    
+
     name = request.form.get('name', '').strip()
     email = request.form.get('email', '').strip()
     request_type = request.form.get('request_type', '').strip()
@@ -1218,23 +1382,25 @@ def contact():
             # Determine which portfolio user this message is for
             # Check if form contains portfolio_owner field (set by template)
             portfolio_owner = request.form.get('portfolio_owner', '').strip()
-            
+
             # If not in form, try to extract from referrer URL
             if not portfolio_owner and request.referrer:
                 # Check if referrer contains /portfolio/<username>
                 import re
-                match = re.search(r'/portfolio/([a-zA-Z0-9_-]+)', request.referrer)
+                match = re.search(r'/portfolio/([a-zA-Z0-9_-]+)',
+                                  request.referrer)
                 if match:
                     portfolio_owner = match.group(1)
-            
+
             # Default to admin if we couldn't determine portfolio owner
             if not portfolio_owner:
                 portfolio_owner = ADMIN_CREDENTIALS['username']
-            
+
             # Get portfolio owner's email for confirmation email
             owner_data = load_data(username=portfolio_owner)
-            owner_email = owner_data.get('contact', {}).get('email', 'support@codexx.com')
-            
+            owner_email = owner_data.get('contact',
+                                         {}).get('email', 'support@codexx.com')
+
             # Prepare extra data
             extra_msg_data = {
                 'request_type': request_type,
@@ -1243,18 +1409,25 @@ def contact():
                 'contact_pref': contact_pref,
                 'company': company
             }
-            
+
             # Save message to the correct portfolio owner
             priority = 'high' if seriousness == 'soon' else 'normal'
-            save_message(name, email, message, username=portfolio_owner, priority=priority, extra_data=extra_msg_data)
-            
+            save_message(name,
+                         email,
+                         message,
+                         username=portfolio_owner,
+                         priority=priority,
+                         extra_data=extra_msg_data)
+
             # Send confirmation email to visitor (async for better UX)
-            thread = threading.Thread(target=send_confirmation_email, args=(name, email, owner_email))
+            thread = threading.Thread(target=send_confirmation_email,
+                                      args=(name, email, owner_email))
             thread.daemon = True
             thread.start()
-            
-            flash('Thank you for your message! I will get back to you soon. Check your email for confirmation.',
-                  'success')
+
+            flash(
+                'Thank you for your message! I will get back to you soon. Check your email for confirmation.',
+                'success')
         except Exception as e:
             app.logger.error(f"Contact form error: {str(e)}")
             flash(
@@ -1267,8 +1440,9 @@ def contact():
     portfolio_owner = request.form.get('portfolio_owner', '').strip()
     if portfolio_owner and portfolio_owner != ADMIN_CREDENTIALS['username']:
         # If the user is on a specific portfolio page
-        return redirect(url_for('user_portfolio', username=portfolio_owner) + '#contact')
-    
+        return redirect(
+            url_for('user_portfolio', username=portfolio_owner) + '#contact')
+
     return redirect(url_for('index') + '#contact')
 
 
@@ -1278,15 +1452,18 @@ def project_detail(username, project_id):
     user_data = load_data(username=username)
     if not user_data:
         return render_template('404.html'), 404
-        
+
     project = next(
-        (p for p in user_data.get('projects', []) if p.get('id') == project_id),
+        (p
+         for p in user_data.get('projects', []) if p.get('id') == project_id),
         None)
 
     if not project:
         return render_template('404.html'), 404
 
-    return render_template('project_detail.html', project=project, data=user_data)
+    return render_template('project_detail.html',
+                           project=project,
+                           data=user_data)
 
 
 @app.route('/sitemap.xml')
@@ -1294,7 +1471,7 @@ def sitemap():
     """Generate dynamic sitemap for SEO"""
     data = load_data()
     base_url = request.url_root.rstrip('/')
-    
+
     sitemap_entries = []
     sitemap_entries.append({
         'loc': f'{base_url}/',
@@ -1302,18 +1479,25 @@ def sitemap():
         'priority': '1.0',
         'lastmod': datetime.now().strftime('%Y-%m-%d')
     })
-    
+
     for project in data.get('projects', []):
         sitemap_entries.append({
-            'loc': f"{base_url}/project/{project['id']}",
-            'changefreq': 'monthly',
-            'priority': '0.8',
-            'lastmod': project.get('created_at', datetime.now().strftime('%Y-%m-%d')).split()[0]
+            'loc':
+            f"{base_url}/project/{project['id']}",
+            'changefreq':
+            'monthly',
+            'priority':
+            '0.8',
+            'lastmod':
+            project.get('created_at',
+                        datetime.now().strftime('%Y-%m-%d')).split()[0]
         })
-    
+
     sitemap_xml = ['<?xml version="1.0" encoding="UTF-8"?>']
-    sitemap_xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">')
-    
+    sitemap_xml.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'
+    )
+
     for entry in sitemap_entries:
         sitemap_xml.append('<url>')
         sitemap_xml.append(f'<loc>{entry["loc"]}</loc>')
@@ -1321,9 +1505,9 @@ def sitemap():
         sitemap_xml.append(f'<changefreq>{entry["changefreq"]}</changefreq>')
         sitemap_xml.append(f'<priority>{entry["priority"]}</priority>')
         sitemap_xml.append('</url>')
-    
+
     sitemap_xml.append('</urlset>')
-    
+
     response = app.make_response('\n'.join(sitemap_xml))
     response.headers['Content-Type'] = 'application/xml; charset=utf-8'
     return response
@@ -1347,7 +1531,7 @@ Disallow: /
 
 User-agent: CCBot
 Disallow: /"""
-    
+
     response = app.make_response(robots_txt)
     response.headers['Content-Type'] = 'text/plain; charset=utf-8'
     return response
@@ -1374,9 +1558,13 @@ def create_manual_backup():
     try:
         backup_info = create_backup(manual=True)
         if backup_info:
-            flash(f'✓ Backup created successfully: {backup_info["filename"]}', 'success')
+            flash(f'✓ Backup created successfully: {backup_info["filename"]}',
+                  'success')
             username = session.get('username')
-            send_event_notification_async('backup_created', f'Manual backup: {backup_info["filename"]} ({backup_info["size_kb"]} KB)', username=username)
+            send_event_notification_async(
+                'backup_created',
+                f'Manual backup: {backup_info["filename"]} ({backup_info["size_kb"]} KB)',
+                username=username)
         else:
             flash('Error creating backup', 'error')
     except Exception as e:
@@ -1393,19 +1581,21 @@ def restore_backup(filename):
     try:
         filename = secure_filename(filename)
         backup_path = os.path.join('backups', filename)
-        
+
         if not os.path.exists(backup_path):
             flash('Backup file not found', 'error')
             return redirect(url_for('dashboard_settings') + '#backups')
-        
+
         if os.path.exists('data.json'):
             recovery_backup = f'backups/recovery_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             shutil.copy('data.json', recovery_backup)
-        
+
         shutil.copy(backup_path, 'data.json')
         flash(f'✓ Portfolio restored from backup: {filename}', 'success')
         username = session.get('username')
-        send_event_notification_async('backup_restored', f'Restored from: {filename}', username=username)
+        send_event_notification_async('backup_restored',
+                                      f'Restored from: {filename}',
+                                      username=username)
         return redirect(url_for('dashboard_settings') + '#backups')
     except Exception as e:
         app.logger.error(f"Error restoring backup: {str(e)}")
@@ -1420,12 +1610,14 @@ def download_backup(filename):
     try:
         filename = secure_filename(filename)
         backup_path = os.path.join('backups', filename)
-        
+
         if not os.path.exists(backup_path):
             flash('Backup file not found', 'error')
             return redirect(url_for('dashboard_settings') + '#backups')
-        
-        return send_file(backup_path, as_attachment=True, download_name=filename)
+
+        return send_file(backup_path,
+                         as_attachment=True,
+                         download_name=filename)
     except Exception as e:
         app.logger.error(f"Error downloading backup: {str(e)}")
         flash('Error downloading backup', 'error')
@@ -1440,23 +1632,23 @@ def delete_backup(filename):
     try:
         filename = secure_filename(filename)
         backup_path = os.path.join('backups', filename)
-        
+
         if not os.path.exists(backup_path):
             flash('Backup file not found', 'error')
             return redirect(url_for('dashboard_settings') + '#backups')
-        
+
         os.remove(backup_path)
-        
+
         backups = get_backups_list()
         updated_backups = [b for b in backups if b['filename'] != filename]
         with open('backups/backups.json', 'w', encoding='utf-8') as f:
             json.dump(updated_backups, f, ensure_ascii=False, indent=2)
-        
+
         flash(f'✓ Backup deleted: {filename}', 'success')
     except Exception as e:
         app.logger.error(f"Error deleting backup: {str(e)}")
         flash('Error deleting backup', 'error')
-    
+
     return redirect(url_for('dashboard_settings') + '#backups')
 
 
@@ -1490,7 +1682,10 @@ def dashboard_login():
             session['username'] = username
             flash('Admin Login Successful!', 'success')
             log_ip_activity('admin_login', f"User: {username}")
-            send_event_notification_async('login_attempt', f"Admin: {username} (IP: {client_ip})", username=username)
+            send_event_notification_async(
+                'login_attempt',
+                f"Admin: {username} (IP: {client_ip})",
+                username=username)
             return redirect(url_for('index'))
 
         # Check other users in data.json
@@ -1508,16 +1703,20 @@ def dashboard_login():
                     session['is_demo_mode'] = False
                 else:
                     session['is_demo_mode'] = user.get('is_demo', True)
-                
+
                 flash(f'Welcome back, {username}!', 'success')
                 log_ip_activity('user_login', f"User: {username}")
-                send_event_notification_async('login_attempt', f"User: {username} (IP: {client_ip})", username=username)
+                send_event_notification_async(
+                    'login_attempt',
+                    f"User: {username} (IP: {client_ip})",
+                    username=username)
                 return redirect(url_for('index'))
 
         flash('Invalid credentials. Please try again.', 'error')
         log_ip_activity('failed_login', f"Username: {username}")
 
     return render_template('dashboard/login.html')
+
 
 @app.route('/dashboard/users/add', methods=['POST'])
 @login_required
@@ -1555,7 +1754,7 @@ def dashboard_add_user():
         'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     data['users'].append(new_user)
-    
+
     # Initialize portfolio for the new user
     if 'portfolios' not in data:
         data['portfolios'] = {}
@@ -1570,14 +1769,28 @@ def dashboard_add_user():
         'projects': [],
         'messages': [],
         'clients': [],
-        'contact': {'email': '', 'phone': '', 'location': ''},
-        'social': {'linkedin': '', 'github': '', 'twitter': ''},
-        'settings': {'theme': 'luxury-gold'},
-        'visitors': {'total': 0, 'today': [], 'unique_ips': []}
+        'contact': {
+            'email': '',
+            'phone': '',
+            'location': ''
+        },
+        'social': {
+            'linkedin': '',
+            'github': '',
+            'twitter': ''
+        },
+        'settings': {
+            'theme': 'luxury-gold'
+        },
+        'visitors': {
+            'total': 0,
+            'today': [],
+            'unique_ips': []
+        }
     }
-    
+
     save_data(data)
-    
+
     # Sync with PostgreSQL
     try:
         ws = Workspace.query.first()
@@ -1585,7 +1798,7 @@ def dashboard_add_user():
             ws = Workspace(name='Default', slug='default')
             db.session.add(ws)
             db.session.commit()
-            
+
         # Check if user already exists in DB to avoid UniqueViolation
         existing_db_user = User.query.filter_by(username=username).first()
         if existing_db_user:
@@ -1593,13 +1806,11 @@ def dashboard_add_user():
             existing_db_user.email = email
             existing_db_user.role = role
         else:
-            db_user = User(
-                username=username,
-                password_hash=new_user['password_hash'],
-                email=email,
-                role=role,
-                workspace_id=ws.id
-            )
+            db_user = User(username=username,
+                           password_hash=new_user['password_hash'],
+                           email=email,
+                           role=role,
+                           workspace_id=ws.id)
             db.session.add(db_user)
         db.session.commit()
     except Exception as e:
@@ -1609,6 +1820,7 @@ def dashboard_add_user():
 
     flash(f'User {username} added successfully.', 'success')
     return redirect(url_for('dashboard_users'))
+
 
 @app.route('/dashboard/logout')
 @login_required
@@ -1626,13 +1838,19 @@ def dashboard():
     username = session.get('username')
     is_admin = session.get('is_admin', False)
     data = load_data()
-    
+
     if is_admin:
         stats = {
-            'users': len(data.get('users', [])),
-            'active_portfolios': len([u for u in data.get('users', []) if not u.get('is_demo', True)]),
-            'messages': 0,
-            'visitors': 0
+            'users':
+            len(data.get('users', [])),
+            'active_portfolios':
+            len([
+                u for u in data.get('users', []) if not u.get('is_demo', True)
+            ]),
+            'messages':
+            0,
+            'visitors':
+            0
         }
         for port in data.get('portfolios', {}).values():
             stats['messages'] += len(port.get('messages', []))
@@ -1640,12 +1858,21 @@ def dashboard():
     else:
         user_data = data.get('portfolios', {}).get(username, {})
         stats = {
-            'projects': len(user_data.get('projects', [])),
-            'skills': len(user_data.get('skills', [])),
-            'messages': len(user_data.get('messages', [])),
-            'unread_messages': len([m for m in user_data.get('messages', []) if not m.get('read', False)]),
-            'visitors': user_data.get('visitors', {}).get('total', 0),
-            'today_visitors': len(user_data.get('visitors', {}).get('today', []))
+            'projects':
+            len(user_data.get('projects', [])),
+            'skills':
+            len(user_data.get('skills', [])),
+            'messages':
+            len(user_data.get('messages', [])),
+            'unread_messages':
+            len([
+                m for m in user_data.get('messages', [])
+                if not m.get('read', False)
+            ]),
+            'visitors':
+            user_data.get('visitors', {}).get('total', 0),
+            'today_visitors':
+            len(user_data.get('visitors', {}).get('today', []))
         }
     return render_template('dashboard/index.html', data=data, stats=stats)
 
@@ -1654,7 +1881,8 @@ def dashboard():
 def documentation():
     """Serve documentation page"""
     import os
-    doc_path = os.path.join('Documentation', 'English', 'documentation-english.html')
+    doc_path = os.path.join('Documentation', 'English',
+                            'documentation-english.html')
     if os.path.exists(doc_path):
         return send_file(doc_path)
     else:
@@ -1668,55 +1896,90 @@ def dashboard_settings():
     """Dashboard settings page for current user"""
     username = session.get('username')
     data = load_data(username=username)
-    
+
     if request.method == 'POST':
         if 'settings' not in data:
             data['settings'] = {}
-        
+
         selected_theme = request.form.get('theme', 'luxury-gold')
-        valid_themes = ['luxury-gold', 'modern-dark', 'clean-light', 'terracotta-red', 'vibrant-green', 'silver-grey']
+        valid_themes = [
+            'luxury-gold', 'modern-dark', 'clean-light', 'terracotta-red',
+            'vibrant-green', 'silver-grey'
+        ]
         if selected_theme in valid_themes:
             # Theme isolation: saves specifically to the current user's profile
             data['settings']['theme'] = selected_theme
             save_data(data, username=username)
-            flash(f'Theme changed to {selected_theme.replace("-", " ").title()} successfully', 'success')
+            flash(
+                f'Theme changed to {selected_theme.replace("-", " ").title()} successfully',
+                'success')
         else:
             flash('Invalid theme selected', 'error')
-        
+
         return redirect(url_for('dashboard_settings'))
-    
-    themes = [
-        {'id': 'luxury-gold', 'name': 'Luxury Gold', 'icon': 'fas fa-crown', 'description': 'Premium & Classic'},
-        {'id': 'modern-dark', 'name': 'Modern Dark', 'icon': 'fas fa-zap', 'description': 'Tech & Trendy'},
-        {'id': 'clean-light', 'name': 'Clean Light', 'icon': 'fas fa-sun', 'description': 'Minimal & Fresh'},
-        {'id': 'terracotta-red', 'name': 'Terracotta Red', 'icon': 'fas fa-fire', 'description': 'Warm & Modern'},
-        {'id': 'vibrant-green', 'name': 'Vibrant Green', 'icon': 'fas fa-leaf', 'description': 'Natural & Fresh'},
-        {'id': 'silver-grey', 'name': 'Silver Grey', 'icon': 'fas fa-gem', 'description': 'Sophisticated & Modern'}
-    ]
-    
+
+    themes = [{
+        'id': 'luxury-gold',
+        'name': 'Luxury Gold',
+        'icon': 'fas fa-crown',
+        'description': 'Premium & Classic'
+    }, {
+        'id': 'modern-dark',
+        'name': 'Modern Dark',
+        'icon': 'fas fa-zap',
+        'description': 'Tech & Trendy'
+    }, {
+        'id': 'clean-light',
+        'name': 'Clean Light',
+        'icon': 'fas fa-sun',
+        'description': 'Minimal & Fresh'
+    }, {
+        'id': 'terracotta-red',
+        'name': 'Terracotta Red',
+        'icon': 'fas fa-fire',
+        'description': 'Warm & Modern'
+    }, {
+        'id': 'vibrant-green',
+        'name': 'Vibrant Green',
+        'icon': 'fas fa-leaf',
+        'description': 'Natural & Fresh'
+    }, {
+        'id': 'silver-grey',
+        'name': 'Silver Grey',
+        'icon': 'fas fa-gem',
+        'description': 'Sophisticated & Modern'
+    }]
+
     current_theme = data.get('settings', {}).get('theme', 'luxury-gold')
-    
+
     # Load Telegram credentials (user-specific)
-    telegram_bot_token, telegram_chat_id = get_telegram_credentials(username=username)
+    telegram_bot_token, telegram_chat_id = get_telegram_credentials(
+        username=username)
     telegram_status = bool(telegram_bot_token and telegram_chat_id)
-    
-    telegram_bot_token_display = telegram_bot_token[:10] + '...' if telegram_bot_token else ''
-    
+
+    telegram_bot_token_display = telegram_bot_token[:
+                                                    10] + '...' if telegram_bot_token else ''
+
     # Load SMTP config (user-specific)
     smtp_config = load_smtp_config(username=username)
     smtp_host = smtp_config.get('host', '')
     smtp_port = smtp_config.get('port', '')
     smtp_email = smtp_config.get('email', '')
-    smtp_status = bool(all([smtp_host, smtp_port, smtp_email, smtp_config.get('password')]))
-    
-    return render_template('dashboard/settings.html', themes=themes, current_theme=current_theme, data=data,
-                         telegram_bot_token=telegram_bot_token_display,
-                         telegram_chat_id=telegram_chat_id,
-                         telegram_status=telegram_status,
-                         smtp_host=smtp_host,
-                         smtp_port=smtp_port,
-                         smtp_email=smtp_email,
-                         smtp_status=smtp_status)
+    smtp_status = bool(
+        all([smtp_host, smtp_port, smtp_email,
+             smtp_config.get('password')]))
+
+    return render_template('dashboard/settings.html',
+                           themes=themes,
+                           current_theme=current_theme,
+                           data=data,
+                           telegram_bot_token=telegram_bot_token_display,
+                           telegram_chat_id=telegram_chat_id,
+                           telegram_status=telegram_status,
+                           smtp_host=smtp_host,
+                           smtp_port=smtp_port,
+                           smtp_email=smtp_email,
+                           smtp_status=smtp_status)
 
 
 @app.route('/dashboard/telegram', methods=['POST'])
@@ -1727,54 +1990,64 @@ def dashboard_telegram():
     username = session.get('username')
     bot_token = request.form.get('bot_token', '').strip()
     chat_id = request.form.get('chat_id', '').strip()
-    
+
     if not bot_token or not chat_id:
         flash('Please provide both Bot Token and Chat ID', 'error')
         return redirect(url_for('dashboard_settings'))
-    
+
     try:
         # Test connection to Telegram API
         test_url = f"https://api.telegram.org/bot{bot_token}/getMe"
         response = requests.get(test_url, timeout=5)
-        
+
         if response.status_code != 200:
-            flash('Invalid Telegram Bot Token. Please check and try again.', 'error')
+            flash('Invalid Telegram Bot Token. Please check and try again.',
+                  'error')
             return redirect(url_for('dashboard_settings'))
-        
+
         # Send test message
         test_message_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         test_payload = {
             'chat_id': chat_id,
-            'text': '✅ Telegram notifications configured successfully for your Codexx Portfolio!',
+            'text':
+            '✅ Telegram notifications configured successfully for your Codexx Portfolio!',
             'parse_mode': 'HTML'
         }
-        test_response = requests.post(test_message_url, json=test_payload, timeout=5)
-        
+        test_response = requests.post(test_message_url,
+                                      json=test_payload,
+                                      timeout=5)
+
         if test_response.status_code != 200:
-            flash('Invalid Telegram Chat ID or permission denied. Please check and try again.', 'error')
+            flash(
+                'Invalid Telegram Chat ID or permission denied. Please check and try again.',
+                'error')
             return redirect(url_for('dashboard_settings'))
-        
+
         # Save to user data (per-user configuration)
         data = load_data(username=username)
         if 'notifications' not in data:
             data['notifications'] = {}
-        
+
         data['notifications']['telegram'] = {
             'bot_token': bot_token,
             'chat_id': chat_id,
             'configured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         save_data(data, username=username)
-        
-        flash('✅ Telegram notifications configured successfully for your portfolio! Check your Telegram for a test message.', 'success')
-        
+
+        flash(
+            '✅ Telegram notifications configured successfully for your portfolio! Check your Telegram for a test message.',
+            'success')
+
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Telegram configuration error: {str(e)}")
-        flash('Connection error. Please check your internet connection and try again.', 'error')
+        flash(
+            'Connection error. Please check your internet connection and try again.',
+            'error')
     except Exception as e:
         app.logger.error(f"Telegram error: {str(e)}")
         flash('An error occurred. Please try again.', 'error')
-    
+
     return redirect(url_for('dashboard_settings'))
 
 
@@ -1788,17 +2061,17 @@ def dashboard_smtp():
     smtp_port = request.form.get('smtp_port', '').strip()
     smtp_email = request.form.get('smtp_email', '').strip()
     smtp_password = request.form.get('smtp_password', '').strip()
-    
+
     if not all([smtp_host, smtp_port, smtp_email, smtp_password]):
         flash('Please provide all SMTP settings', 'error')
         return redirect(url_for('dashboard_settings'))
-    
+
     try:
         # Save to user data (per-user configuration)
         data = load_data(username=username)
         if 'notifications' not in data:
             data['notifications'] = {}
-        
+
         data['notifications']['smtp'] = {
             'host': smtp_host,
             'port': smtp_port,
@@ -1807,12 +2080,13 @@ def dashboard_smtp():
             'configured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         save_data(data, username=username)
-        
-        flash('✅ SMTP settings saved successfully for your portfolio!', 'success')
+
+        flash('✅ SMTP settings saved successfully for your portfolio!',
+              'success')
     except Exception as e:
         app.logger.error(f"SMTP configuration error: {str(e)}")
         flash('An error occurred. Please try again.', 'error')
-    
+
     return redirect(url_for('dashboard_settings'))
 
 
@@ -1823,10 +2097,14 @@ def email_test_connection():
     """Test SMTP connection"""
     username = session.get('username')
     smtp_config = load_smtp_config(username=username)
-    
-    if not all([smtp_config.get('host'), smtp_config.get('email'), smtp_config.get('password')]):
+
+    if not all([
+            smtp_config.get('host'),
+            smtp_config.get('email'),
+            smtp_config.get('password')
+    ]):
         return jsonify({'success': False, 'error': 'SMTP not configured'})
-    
+
     try:
         test_subject = '🧪 Codexx Portfolio - Email Test'
         test_body = """
@@ -1841,9 +2119,14 @@ def email_test_connection():
                 </p>
             </body>
         </html>
-        """.format(smtp_config.get('email'), smtp_config.get('host'), smtp_config.get('port'))
-        
-        if send_email(smtp_config.get('email'), test_subject, test_body, html=True, username=username):
+        """.format(smtp_config.get('email'), smtp_config.get('host'),
+                   smtp_config.get('port'))
+
+        if send_email(smtp_config.get('email'),
+                      test_subject,
+                      test_body,
+                      html=True,
+                      username=username):
             return jsonify({'success': True})
         else:
             return jsonify({'success': False, 'error': 'Failed to send email'})
@@ -1859,24 +2142,31 @@ def telegram_test_connection():
     """Test Telegram connection"""
     username = session.get('username')
     bot_token, chat_id = get_telegram_credentials(username=username)
-    
+
     if not bot_token or not chat_id:
         return jsonify({'success': False, 'error': 'Telegram not configured'})
-    
+
     try:
         # Send test message
         test_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         test_payload = {
             'chat_id': chat_id,
-            'text': '🧪 <b>Connection Test Successful!</b>\n✅ Your Portfolio Bot is working perfectly!',
+            'text':
+            '🧪 <b>Connection Test Successful!</b>\n✅ Your Portfolio Bot is working perfectly!',
             'parse_mode': 'HTML'
         }
         test_response = requests.post(test_url, json=test_payload, timeout=5)
-        
+
         if test_response.status_code == 200:
-            return jsonify({'success': True, 'message': 'Test message sent successfully'})
+            return jsonify({
+                'success': True,
+                'message': 'Test message sent successfully'
+            })
         else:
-            return jsonify({'success': False, 'error': 'Failed to send test message'})
+            return jsonify({
+                'success': False,
+                'error': 'Failed to send test message'
+            })
     except Exception as e:
         app.logger.error(f"Test connection error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
@@ -2133,8 +2423,6 @@ def dashboard_social():
     return render_template('dashboard/social.html', data=data)
 
 
-
-
 @app.route('/dashboard/messages')
 @login_required
 @disable_in_demo
@@ -2142,62 +2430,85 @@ def dashboard_messages():
     """List all messages for current user with priority filtering"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-    
+
     # Load user's isolated data
     data = load_data(username=username)
     user_messages = data.get('messages', [])
-    
+
     all_messages = []
-    
+
     # Add user-specific messages from JSON
     for msg in user_messages:
         msg_copy = msg.copy()
         msg_copy['is_db'] = False
         all_messages.append(msg_copy)
-    
+
     # If admin, also fetch global messages from the database
     if is_admin:
         try:
             # Fetch messages from PostgreSQL that are not internal
-            db_messages = Message.query.filter_by(is_internal=False).order_by(Message.created_at.desc()).all()
+            db_messages = Message.query.filter_by(is_internal=False).order_by(
+                Message.created_at.desc()).all()
             for msg in db_messages:
                 all_messages.append({
-                    'id': str(msg.id), # Ensure ID is string for uniform handling
-                    'name': msg.name,
-                    'email': msg.email,
-                    'message': msg.message,
-                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'read': msg.is_read,
-                    'request_type': 'Academy Inquiry' if not msg.sender_id else 'Portfolio Message',
-                    'interest_area': 'General' if not msg.sender_id else 'Direct',
-                    'priority': 'normal',
-                    'is_db': True
+                    'id':
+                    str(msg.id),  # Ensure ID is string for uniform handling
+                    'name':
+                    msg.name,
+                    'email':
+                    msg.email,
+                    'message':
+                    msg.message,
+                    'date':
+                    msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read':
+                    msg.is_read,
+                    'request_type':
+                    'Academy Inquiry'
+                    if not msg.sender_id else 'Portfolio Message',
+                    'interest_area':
+                    'General' if not msg.sender_id else 'Direct',
+                    'priority':
+                    'normal',
+                    'is_db':
+                    True
                 })
         except Exception as e:
             app.logger.error(f"Error fetching DB messages: {str(e)}")
-    
+
     # Get priority filter from query parameter
     priority_filter = request.args.get('priority', 'all')
-    
+
     # Filter by priority if specified
     if priority_filter != 'all':
-        messages = [m for m in all_messages if m.get('priority', 'normal') == priority_filter]
+        messages = [
+            m for m in all_messages
+            if m.get('priority', 'normal') == priority_filter
+        ]
     else:
         messages = all_messages
-    
+
     # Sort by date descending
     messages = sorted(messages, key=lambda x: x.get('date', ''), reverse=True)
-    
+
     # Calculate priority counts for dashboard
     priority_stats = {
-        'high': len([m for m in all_messages if m.get('priority') == 'high']),
-        'normal': len([m for m in all_messages if m.get('priority', 'normal') == 'normal']),
-        'low': len([m for m in all_messages if m.get('priority') == 'low']),
-        'total': len(all_messages)
+        'high':
+        len([m for m in all_messages if m.get('priority') == 'high']),
+        'normal':
+        len([
+            m for m in all_messages if m.get('priority', 'normal') == 'normal'
+        ]),
+        'low':
+        len([m for m in all_messages if m.get('priority') == 'low']),
+        'total':
+        len(all_messages)
     }
-    
-    return render_template('dashboard/messages.html', messages=messages, 
-                         priority_filter=priority_filter, priority_stats=priority_stats)
+
+    return render_template('dashboard/messages.html',
+                           messages=messages,
+                           priority_filter=priority_filter,
+                           priority_stats=priority_stats)
 
 
 @app.route('/dashboard/messages/view/<message_id>')
@@ -2206,7 +2517,7 @@ def dashboard_view_message(message_id):
     """View specific message for current user or admin"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-    
+
     # Check if it's a DB message (for admin)
     if is_admin:
         try:
@@ -2215,7 +2526,7 @@ def dashboard_view_message(message_id):
                 if not db_msg.is_read:
                     db_msg.is_read = True
                     db.session.commit()
-                
+
                 message = {
                     'id': db_msg.id,
                     'name': db_msg.name,
@@ -2225,15 +2536,15 @@ def dashboard_view_message(message_id):
                     'read': db_msg.is_read,
                     'request_type': 'Academy Inquiry'
                 }
-                return render_template('dashboard/view_message.html', message=message)
+                return render_template('dashboard/view_message.html',
+                                       message=message)
         except:
             pass
 
     # Fallback to JSON isolation
     data = load_data(username=username)
-    message = next(
-        (m for m in data.get('messages', []) if str(m.get('id')) == str(message_id)),
-        None)
+    message = next((m for m in data.get('messages', [])
+                    if str(m.get('id')) == str(message_id)), None)
 
     if not message:
         flash('Message not found', 'error')
@@ -2253,7 +2564,7 @@ def dashboard_delete_message(message_id):
     """Delete message for current user or admin"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-    
+
     # Check if it's a DB message (for admin)
     if is_admin:
         try:
@@ -2268,7 +2579,8 @@ def dashboard_delete_message(message_id):
 
     data = load_data(username=username)
     data['messages'] = [
-        m for m in data.get('messages', []) if str(m.get('id')) != str(message_id)
+        m for m in data.get('messages', [])
+        if str(m.get('id')) != str(message_id)
     ]
     save_data(data, username=username)
     flash('Message deleted successfully', 'success')
@@ -2282,9 +2594,9 @@ def dashboard_convert_message_to_client(message_id):
     """Convert message to client for current user or admin"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-    
+
     message = None
-    
+
     # Check if it's a DB message (for admin)
     if is_admin:
         try:
@@ -2302,10 +2614,9 @@ def dashboard_convert_message_to_client(message_id):
     # Fallback to JSON if not found in DB
     if not message:
         data = load_data(username=username)
-        message = next(
-            (m for m in data.get('messages', []) if str(m.get('id')) == str(message_id)),
-            None)
-        current_data = data # Keep reference for saving
+        message = next((m for m in data.get('messages', [])
+                        if str(m.get('id')) == str(message_id)), None)
+        current_data = data  # Keep reference for saving
     else:
         current_data = load_data(username=username)
 
@@ -2316,7 +2627,10 @@ def dashboard_convert_message_to_client(message_id):
     if 'clients' not in current_data:
         current_data['clients'] = []
 
-    client_ids = [c.get('id', 0) for c in current_data.get('clients', []) if isinstance(c.get('id'), int)]
+    client_ids = [
+        c.get('id', 0) for c in current_data.get('clients', [])
+        if isinstance(c.get('id'), int)
+    ]
     new_id = max(client_ids) + 1 if client_ids else 1
 
     new_client = {
@@ -2356,7 +2670,7 @@ def dashboard_clients():
     clients = sorted(data.get('clients', []),
                      key=lambda x: x.get('created_at', ''),
                      reverse=True)
-    
+
     stats = get_clients_stats(username)
     return render_template('dashboard/clients.html',
                            clients=clients,
@@ -2412,7 +2726,7 @@ def dashboard_add_client():
 
         data['clients'].append(new_client)
         save_data(data, username=username)
-        
+
         # Send Telegram notification for new lead (to user's channel)
         send_telegram_notification(
             f"📊 <b>New Lead Added</b>\n\n"
@@ -2420,9 +2734,8 @@ def dashboard_add_client():
             f"📧 {new_client['email']}\n"
             f"📋 {new_client['project_title']}\n"
             f"💰 ${new_client['price'] if new_client['price'] else 'TBD'}",
-            username=username
-        )
-        
+            username=username)
+
         flash('Client added successfully', 'success')
         return redirect(url_for('dashboard_clients'))
 
@@ -2446,7 +2759,7 @@ def dashboard_edit_client(client_id):
     if request.method == 'POST':
         old_status = client.get('status', 'lead')
         new_status = request.form.get('status', 'lead')
-        
+
         client['name'] = request.form.get('name', '').strip()
         client['email'] = request.form.get('email', '').strip()
         client['phone'] = request.form.get('phone', '').strip()
@@ -2459,9 +2772,10 @@ def dashboard_edit_client(client_id):
         client['deadline'] = request.form.get('deadline', '').strip()
         client['start_date'] = request.form.get('start_date', '').strip()
         client['notes'] = request.form.get('notes', '').strip()
-        
+
         if old_status != new_status:
-            client['status_updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            client['status_updated_at'] = datetime.now().strftime(
+                '%Y-%m-%d %H:%M:%S')
             # Send Telegram notification for status change (to user's channel)
             status_emoji = {
                 'lead': '🎯',
@@ -2476,8 +2790,7 @@ def dashboard_edit_client(client_id):
                 f"📍 {old_status.title()} → {new_status.replace('-', ' ').title()}\n"
                 f"💰 ${client['price'] if client['price'] else 'TBD'}\n"
                 f"📝 {client['notes'][:100] if client['notes'] else 'N/A'}",
-                username=username
-            )
+                username=username)
 
         save_data(data, username=username)
         flash('Client updated successfully', 'success')
@@ -2517,8 +2830,6 @@ def dashboard_delete_client(client_id):
     return redirect(url_for('dashboard_clients'))
 
 
-
-
 @app.route('/dashboard/change-password', methods=['GET', 'POST'])
 @login_required
 @disable_in_demo
@@ -2543,30 +2854,39 @@ def dashboard_change_password():
             # Verify current password
             data = load_data()
             user_found = False
-            
+
             if 'users' in data:
                 for user in data['users']:
                     if user.get('username') == username:
                         user_found = True
                         # For admin user, check against admin credentials
                         if username == ADMIN_CREDENTIALS['username']:
-                            if not check_password_hash(ADMIN_CREDENTIALS['password_hash'], current_password):
+                            if not check_password_hash(
+                                    ADMIN_CREDENTIALS['password_hash'],
+                                    current_password):
                                 flash('Current password is incorrect', 'error')
-                                return render_template('dashboard/change_password.html')
+                                return render_template(
+                                    'dashboard/change_password.html')
                         else:
                             # For regular users, check their stored hash
-                            if not check_password_hash(user.get('password_hash', ''), current_password):
+                            if not check_password_hash(
+                                    user.get('password_hash', ''),
+                                    current_password):
                                 flash('Current password is incorrect', 'error')
-                                return render_template('dashboard/change_password.html')
-                        
+                                return render_template(
+                                    'dashboard/change_password.html')
+
                         # Update password
-                        user['password_hash'] = generate_password_hash(new_password)
+                        user['password_hash'] = generate_password_hash(
+                            new_password)
                         save_data(data)
-                        
-                        flash('Password changed successfully. Please login again.', 'success')
+
+                        flash(
+                            'Password changed successfully. Please login again.',
+                            'success')
                         session.clear()
                         return redirect(url_for('dashboard_login'))
-            
+
             if not user_found:
                 flash('User not found', 'error')
 
@@ -2626,10 +2946,10 @@ def add_security_headers(response):
         "font-src *; "
         "img-src * data: blob:; "
         "connect-src *; "
-        "frame-ancestors *;"
-    )
+        "frame-ancestors *;")
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers[
+        'Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
 
 

@@ -42,6 +42,16 @@
             font-weight: 900;
         }
 
+        .custom-btn-glow-landing {
+            transition: all 0.3s ease;
+            font-weight: 600 !important;
+        }
+
+        .custom-btn-glow-landing:hover {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5) !important;
+            transform: translateY(-2px);
+        }
+
         .navbar {
             background: rgba(13, 13, 13, 0.95);
             backdrop-filter: blur(10px);
@@ -254,8 +264,12 @@
             </a>
             <div class="ms-auto d-flex gap-2">
                 {% if is_logged_in %}
+                    {% if not is_admin %}
                     <a href="{{ url_for('user_portfolio', username=username) }}" class="btn btn-outline-gold btn-sm"><i class="fas fa-briefcase me-1"></i> My Portfolio</a>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-gold btn-sm"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                    {% endif %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-gold btn-sm shadow-sm custom-btn-glow-landing"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('dashboard_login') }}" class="btn btn-gold btn-sm"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
                 {% endif %}
             </div>
         </div>
@@ -320,6 +334,17 @@
             
             <div class="row g-4">
                 {% for username, portfolio in portfolios.items() %}
+                    {# Only show non-demo users (verified) and skip admin #}
+                    {% if username == 'admin' %}{% continue %}{% endif %}
+                    
+                    {% set is_verified = False %}
+                    {% for user in data.users if user.username == username %}
+                        {% if not user.is_demo %}
+                            {% set is_verified = True %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if is_verified or username == 'admin' %}
                     <div class="col-md-4">
                         <div class="portfolio-card">
                             {% if portfolio.photo %}
@@ -337,11 +362,17 @@
                             <a href="{{ url_for('user_portfolio', username=username) }}" class="btn btn-outline-gold btn-sm w-100">View Portfolio</a>
                         </div>
                     </div>
+                    {% endif %}
                 {% else %}
                     <div class="col-12 text-center py-5">
                         <p class="text-secondary">Verifying community members...</p>
                     </div>
                 {% endfor %}
+            </div>
+            <div class="text-center mt-5">
+                <a href="{{ url_for('catalog') }}" class="btn btn-outline-gold px-5 py-3 custom-btn-glow-landing">
+                    <i class="fas fa-th-list me-2"></i> Browse Full Catalog
+                </a>
             </div>
         </div>
     </section>

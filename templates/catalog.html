@@ -76,9 +76,11 @@
                 <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm">Home</a>
                 {% if session.get('admin_logged_in') %}
                     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-gold btn-sm">Dashboard</a>
+                    {% if not session.get('is_admin') %}
                     <a href="{{ url_for('user_portfolio', username=session.get('username')) }}" class="btn btn-gold btn-sm">My Portfolio</a>
+                    {% endif %}
                 {% else %}
-                    <a href="{{ url_for('register') }}" class="btn btn-gold btn-sm">Join Academy</a>
+                    <a href="{{ url_for('dashboard_login') }}" class="btn btn-gold btn-sm">Login</a>
                 {% endif %}
             </div>
         </div>
@@ -91,20 +93,32 @@
         </div>
 
         <div class="row g-4">
-            {% for username, portfolio in portfolios.items() %}
+            {% for username, info in portfolios.items() %}
+            {% set portfolio = info.data %}
+            {% set status = info.status %}
             <div class="col-md-6 col-lg-4">
                 <div class="catalog-card h-100 p-4 d-flex flex-column text-center">
-                    <div class="mb-4">
+                    <div class="mb-4 position-relative">
                         {% if portfolio.photo %}
                         <img src="{{ url_for('static', filename=portfolio.photo.replace('static/', '')) }}" alt="{{ portfolio.name }}" class="rounded-circle portfolio-avatar">
                         {% else %}
                         <img src="{{ url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Placeholder" class="rounded-circle portfolio-avatar">
                         {% endif %}
+                        
+                        <div class="position-absolute top-0 end-0">
+                            {% if status == 'verified' %}
+                                <span class="badge bg-success shadow-sm" title="Verified - Full Access"><i class="fas fa-check-double"></i> Verified</span>
+                            {% elif status == 'in-progress' %}
+                                <span class="badge bg-info text-dark shadow-sm" title="Under Construction"><i class="fas fa-tools"></i> Building</span>
+                            {% else %}
+                                <span class="badge bg-secondary shadow-sm" title="New Account"><i class="fas fa-star"></i> New</span>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <div class="mb-2">
                         <span class="badge-user-type">
-                            {% if username == 'admin' %}Founder{% else %}Professional Member{% endif %}
+                            {% if username == 'admin' %}Founder{% else %}Academy Member{% endif %}
                         </span>
                     </div>
 
@@ -112,11 +126,11 @@
                     <p class="text-secondary small fw-bold mb-3">{{ portfolio.title or 'Expert Consultant' }}</p>
                     
                     <p class="text-secondary small mb-4 flex-grow-1">
-                        {{ (portfolio.description or portfolio.about or 'A professional building their future on Codexx.') | truncate(150) }}
+                        {{ (portfolio.description or portfolio.about or 'A professional building their future on Codexx.') | truncate(120) }}
                     </p>
 
                     <div class="mt-auto">
-                        <a href="{{ url_for('user_portfolio', username=username) }}" class="btn btn-gold w-100">Visit Portfolio</a>
+                        <a href="{{ url_for('user_portfolio', username=username) }}" class="btn btn-gold w-100 custom-btn-glow-landing">Visit Portfolio</a>
                     </div>
                 </div>
             </div>
