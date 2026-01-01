@@ -67,14 +67,17 @@
 
         .brand-logo img {
             height: 40px;
+            width: auto;
+            object-fit: contain;
             filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
         }
 
         .brand-name {
-            font-weight: 700;
-            font-size: 1.1rem;
+            font-weight: 900;
+            font-size: 1.2rem;
             color: #fff;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .sidebar-content {
@@ -299,14 +302,13 @@
                 </a>
                 <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-comment-dots"></i>
-                    <span>Messages</span>
+                    <span>Academy Inquiries</span>
                 </a>
                 <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
                     <i class="fas fa-hashtag"></i>
                     <span>Channels</span>
                 </a>
                 {% endif %}
-
                 <div class="nav-section-title">Preference</div>
                 <a href="{{ url_for('dashboard_settings') }}" class="nav-link {% if request.endpoint == 'dashboard_settings' %}active{% endif %}">
                     <i class="fas fa-sliders-h"></i>

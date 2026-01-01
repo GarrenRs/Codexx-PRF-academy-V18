@@ -47,345 +47,42 @@
     {
       "id": 1,
       "username": "Codexx",
-      "password_hash": "scrypt:32768:8:1$4iFkC7QOYThsBYTn$9b10458d5a5d8953cff2c6e5e61a0e1745b9876597da100bcd68a110b82be7222ef2af9904267afeab20190b3ed92f635e92e7643bb3aeb6d4b85ae4f6a7261e",
-      "email": "sarah@example.com",
+      "password_hash": "scrypt:32768:8:1$1IidZfhHqiqRyJ0C$f13bff005b2f7463fd9ded6a66942015e977c29a28cb313a8c687cfa5706d200e0969dcc3dbc834c5cf099f0ff21cc7e4ea008c9177430185ff9e48d6eb71872",
+      "email": "Raesondark@gmail.com",
       "role": "user",
       "is_demo": false,
-      "created_at": "2026-01-01 00:07:23"
-    },
-    {
-      "id": 2,
-      "username": "CreativeDesigner",
-      "password_hash": "scrypt:32768:8:1$randomsalt$hash",
-      "email": "designer@example.com",
-      "role": "user",
-      "is_demo": false,
-      "created_at": "2026-01-01 12:00:00"
-    },
-    {
-      "id": 3,
-      "username": "DataScientist",
-      "password_hash": "scrypt:32768:8:1$randomsalt$hash",
-      "email": "data@example.com",
-      "role": "user",
-      "is_demo": false,
-      "created_at": "2026-01-01 12:00:00"
-    },
-    {
-      "id": 4,
-      "username": "CyberSecurity",
-      "password_hash": "scrypt:32768:8:1$randomsalt$hash",
-      "email": "security@example.com",
-      "role": "user",
-      "is_demo": false,
-      "created_at": "2026-01-01 12:00:00"
+      "created_at": "2026-01-01 03:02:49"
     }
   ],
   "portfolios": {
     "Codexx": {
       "username": "Codexx",
-      "name": "Codexx Portfolio",
-      "title": "Software Engineer",
-      "description": "Building modern web applications",
-      "about": "I am a passionate software engineer with experience in full-stack development.",
-      "photo": "/static/assets/uploads/profile_Codexx_20260101_003643_photo_2025-12-31_21-17-48.jpg",
-      "skills": [
-        {
-          "name": "Python",
-          "level": 95
-        },
-        {
-          "name": "React",
-          "level": 90
-        }
-      ],
-      "projects": [
-        {
-          "id": 1,
-          "title": "Dashboard",
-          "short_description": "Modern Analytics Dashboard",
-          "content": "A high-performance analytics dashboard built with React and D3.js.",
-          "description": "Modern Analytics Dashboard",
-          "image": "/static/assets/uploads/project_Codexx_1_20260101_003052_create-web-automation-bot-in-4-hours-using-python-selenium.jpg",
-          "demo_url": "https://github.com/GarrenRs",
-          "github_url": "https://github.com/GarrenRs",
-          "technologies": [
-            "React",
-            "D3.js",
-            "Tailwind"
-          ]
-        }
-      ],
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "",
+      "skills": [],
+      "projects": [],
       "messages": [],
       "clients": [],
       "contact": {
-        "email": "codexx@example.com",
-        "phone": "+123456789",
-        "location": "Global"
+        "email": "",
+        "phone": "",
+        "location": ""
       },
       "social": {
-        "facebook": "https://web.facebook.com/Imed.lorganiste"
+        "linkedin": "",
+        "github": "",
+        "twitter": ""
       },
-      "settings": {
-        "theme": "silver-grey"
-      },
-      "visitors": {
-        "total": 9,
-        "today": [
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:20:51",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:25:16",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:26:13",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:26:41",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:26:50",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:27:03",
-            "date": "2026-01-01"
-          }
-        ],
-        "unique_ips": [
-          "105.235.129.88, 10.83.5.121",
-          "105.235.129.88, 10.83.8.81"
-        ]
-      }
-    },
-    "CreativeDesigner": {
-      "username": "CreativeDesigner",
-      "name": "Elena Smith",
-      "title": "Senior UI/UX Designer",
-      "description": "Crafting beautiful digital experiences",
-      "about": "Award-winning designer with 10 years of experience in mobile and web design.",
-      "photo": "static/assets/profile-placeholder.svg",
-      "skills": [
-        {
-          "name": "Figma",
-          "level": 98
-        },
-        {
-          "name": "Adobe XD",
-          "level": 95
-        },
-        {
-          "name": "User Research",
-          "level": 90
-        }
-      ],
-      "projects": [
-        {
-          "id": 1,
-          "title": "Eco-Friendly App",
-          "short_description": "Mobile app for sustainable living",
-          "content": "Designed a mobile application that helps users track their carbon footprint.",
-          "description": "Mobile app for sustainable living",
-          "image": "static/assets/project-placeholder.svg",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": [
-            "Figma",
-            "Interaction Design"
-          ]
-        }
-      ],
-      "messages": [],
-      "clients": [],
-      "contact": {
-        "email": "elena@example.com",
-        "phone": "+1987654321",
-        "location": "New York, NY"
-      },
-      "social": {},
       "settings": {
         "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 2,
-        "today": [
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:16:01",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:16:29",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:21:51",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:23:20",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:23:33",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.5.121",
-            "timestamp": "2026-01-01 01:24:31",
-            "date": "2026-01-01"
-          }
-        ],
-        "unique_ips": [
-          "105.235.129.88, 10.83.5.121",
-          "105.235.129.88, 10.83.8.81"
-        ]
-      }
-    },
-    "DataScientist": {
-      "username": "DataScientist",
-      "name": "Dr. Alan Turing",
-      "title": "Machine Learning Engineer",
-      "description": "Solving complex problems with data",
-      "about": "Expert in predictive modeling, NLP, and deep learning algorithms.",
-      "photo": "static/assets/profile-placeholder.svg",
-      "skills": [
-        {
-          "name": "TensorFlow",
-          "level": 95
-        },
-        {
-          "name": "PyTorch",
-          "level": 92
-        },
-        {
-          "name": "Pandas",
-          "level": 98
-        }
-      ],
-      "projects": [
-        {
-          "id": 1,
-          "title": "Disease Prediction",
-          "short_description": "AI-driven medical diagnosis",
-          "content": "Developed a model to predict early-stage diseases using patient history.",
-          "description": "AI-driven medical diagnosis",
-          "image": "static/assets/project-placeholder.svg",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": [
-            "Python",
-            "Keras",
-            "Scikit-Learn"
-          ]
-        }
-      ],
-      "messages": [],
-      "clients": [],
-      "contact": {
-        "email": "alan@example.com",
-        "phone": "+447700900000",
-        "location": "London, UK"
-      },
-      "social": {},
-      "settings": {
-        "theme": "vibrant-green"
-      },
-      "visitors": {
-        "total": 1,
-        "today": [
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:19:37",
-            "date": "2026-01-01"
-          }
-        ],
-        "unique_ips": [
-          "105.235.129.88, 10.83.8.81"
-        ]
-      }
-    },
-    "CyberSecurity": {
-      "username": "CyberSecurity",
-      "name": "Sarah Connor",
-      "title": "Security Analyst & Ethical Hacker",
-      "description": "Protecting digital assets from threats",
-      "about": "Specializing in penetration testing and cloud security architecture.",
-      "photo": "static/assets/profile-placeholder.svg",
-      "skills": [
-        {
-          "name": "Ethical Hacking",
-          "level": 96
-        },
-        {
-          "name": "Network Security",
-          "level": 94
-        },
-        {
-          "name": "Cloud Security",
-          "level": 90
-        }
-      ],
-      "projects": [
-        {
-          "id": 1,
-          "title": "Secure Gateway",
-          "short_description": "Advanced firewall system",
-          "content": "Implemented a multi-layered security gateway for enterprise networks.",
-          "description": "Advanced firewall system",
-          "image": "static/assets/project-placeholder.svg",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": [
-            "Rust",
-            "Linux",
-            "Docker"
-          ]
-        }
-      ],
-      "messages": [],
-      "clients": [],
-      "contact": {
-        "email": "sarah.c@example.com",
-        "phone": "+15550199",
-        "location": "Austin, TX"
-      },
-      "social": {},
-      "settings": {
-        "theme": "modern-dark"
-      },
-      "visitors": {
-        "total": 1,
-        "today": [
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:20:34",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.88, 10.83.8.81",
-            "timestamp": "2026-01-01 01:20:37",
-            "date": "2026-01-01"
-          }
-        ],
-        "unique_ips": [
-          "105.235.129.88, 10.83.8.81"
-        ]
+        "total": 0,
+        "today": [],
+        "unique_ips": []
       }
     }
   }

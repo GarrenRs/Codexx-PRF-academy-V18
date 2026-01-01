@@ -990,10 +990,82 @@ def get_clients_stats(username=None):
 
 
 # Error handlers
-@app.errorhandler(400)
-def bad_request(e):
-    """Custom 400 error page"""
-    return render_template('400.html'), 400
+@app.route('/dashboard/chat', methods=['GET', 'POST'])
+@app.route('/dashboard/chat/<user_id>', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_chat(user_id=None):
+    """Internal chat system between users and admin"""
+    current_user_id = str(session.get('user_id'))
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    # For admin, if no user_id is provided, show the user list
+    if is_admin and not user_id:
+        # Fetch all users except admin to start conversations
+        users = User.query.filter(User.username != 'admin').all()
+        return render_template('dashboard/chat_list.html', users=users)
+        
+    # If a user is accessing, their user_id is always their own, unless they're admin
+    target_user_id = user_id if is_admin else current_user_id
+    
+    # Internal chat routes are deprecated. Redirecting to consolidated messages.
+    return redirect(url_for('dashboard_messages'))
+
+@app.route('/dashboard/chat/clear/<user_id>', methods=['POST'])
+@login_required
+@disable_in_demo
+def dashboard_clear_chat(user_id):
+    """Clear internal chat history (Legacy)"""
+    return redirect(url_for('dashboard_messages'))
+
+@app.route('/contact/academy', methods=['POST'])
+def contact_academy():
+    """Public contact form for the Academy"""
+    # Force get form data
+    name = request.form.get('name')
+    email = request.form.get('email')
+    message_content = request.form.get('message')
+    
+    # Check session
+    user_id = session.get('user_id')
+    username = session.get('username')
+    user_email = session.get('email')
+    
+    # If logged in, override name and email from session
+    if user_id:
+        name = username
+        email = user_email
+
+    # Debug logs (internal)
+    app.logger.info(f"Contact attempt - Name: {name}, Email: {email}")
+
+    if not message_content:
+        flash('Please enter a message.', 'danger')
+        return redirect(url_for('index', _anchor='academy-contact'))
+
+    # Fallback for email if missing for some reason
+    if not email:
+        email = 'no-email@codexx.academy'
+
+    try:
+        new_message = Message(
+            name=name or 'Anonymous Member' if user_id else 'Guest',
+            email=email,
+            message=message_content,
+            is_internal=False,
+            sender_id=user_id,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_message)
+        db.session.commit()
+        flash('Success! Your message has been delivered to the Academy team.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error saving message: {str(e)}")
+        flash('System error. Please try again later.', 'danger')
+    
+    return redirect(url_for('index', _anchor='academy-contact'))
 
 
 @app.errorhandler(403)
@@ -2498,12 +2570,12 @@ def download_cv():
 def add_security_headers(response):
     """Add security headers including Content Security Policy"""
     response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://replit-cdn.com; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-        "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-        "img-src 'self' data: blob:; "
-        "connect-src 'self' https://cdn.jsdelivr.net; "
+        "default-src *; "
+        "script-src * 'unsafe-inline' 'unsafe-eval'; "
+        "style-src * 'unsafe-inline'; "
+        "font-src *; "
+        "img-src * data: blob:; "
+        "connect-src *; "
         "frame-ancestors *;"
     )
     response.headers['X-Content-Type-Options'] = 'nosniff'

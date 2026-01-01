@@ -112,7 +112,15 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                     <small class="text-muted">{{ message.interest_area or 'N/A' }}</small>
                                 </td>
                                 <td>
+                                    {% if message.sender_id %}
+                                    <span class="badge bg-gold-gradient text-black"><i class="fas fa-user-circle"></i> Member</span>
+                                    <br>
                                     <strong style="color: #000000 !important;">{{ message.name }}</strong>
+                                    {% else %}
+                                    <span class="badge bg-secondary"><i class="fas fa-user"></i> Visitor</span>
+                                    <br>
+                                    <strong style="color: #000000 !important;">{{ message.name }}</strong>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <a

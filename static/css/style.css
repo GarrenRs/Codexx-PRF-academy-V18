@@ -653,8 +653,10 @@ html {
 }
 
 .navbar-brand {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     background: var(--gold-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
