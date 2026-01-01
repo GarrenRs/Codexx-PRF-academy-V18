@@ -24,6 +24,11 @@
                             <i class="fas fa-toggle-on me-1"></i> {{ 'Switch to Full Access' if target_user.is_demo else 'Switch to Demo Mode' }}
                         </button>
                     </form>
+                    <form action="{{ url_for('dashboard_toggle_user_verification', user_id=target_user.id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm {% if is_verified %}btn-success{% else %}btn-outline-light{% endif %}" style="font-weight: 700; border-radius: 6px; padding: 10px 20px; border: 1px solid var(--primary-gold); color: {% if is_verified %}#fff{% else %}var(--primary-gold){% endif %};">
+                            <i class="fas fa-shield-alt me-1"></i> {{ 'Disable Badge' if is_verified else 'Enable Badge' }}
+                        </button>
+                    </form>
                     {% if target_user.username != 'admin' %}
                     <form action="{{ url_for('delete_user', user_id=target_user.id) }}" method="POST" onsubmit="return confirm('⚠️ Are you sure you want to delete this user?');">
                         <button type="submit" class="btn btn-danger btn-sm" style="font-weight: 700; border-radius: 6px; padding: 10px 20px;">

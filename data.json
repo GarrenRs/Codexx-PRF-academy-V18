@@ -43,35 +43,54 @@
     "theme": "luxury-gold"
   },
   "clients": [],
+  "users": [
+    {
+      "id": 1,
+      "username": "Codexx",
+      "password_hash": "scrypt:32768:8:1$KIXyi2D7b7hNSOAI$1e82dab664e16ca6f494340d4a538b74dda85f1f94b7b91fc117c722ed28f049043ab95b75c1b00136460e7750da826819b3443033813c619bdc8465f7c357b0",
+      "email": "Raesondark@gmail.com",
+      "role": "user",
+      "is_demo": true,
+      "created_at": "2026-01-01 16:03:22",
+      "is_verified": true
+    }
+  ],
   "portfolios": {
-    "admin": {
-      "name": "admin",
-      "title": "Web Developer & Designer",
-      "description": "Welcome to my professional portfolio.",
+    "Codexx": {
+      "username": "Codexx",
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "",
       "skills": [],
       "projects": [],
       "messages": [],
       "clients": [],
+      "contact": {
+        "email": "",
+        "phone": "",
+        "location": ""
+      },
+      "social": {
+        "linkedin": "",
+        "github": "",
+        "twitter": ""
+      },
       "settings": {
-        "theme": "modern-dark"
+        "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 2,
+        "total": 1,
         "today": [
           {
-            "ip": "105.235.129.241, 10.81.6.140",
-            "timestamp": "2026-01-01 13:18:39",
-            "date": "2026-01-01"
-          },
-          {
-            "ip": "105.235.129.241, 10.81.5.166",
-            "timestamp": "2026-01-01 13:53:50",
+            "ip": "105.235.129.241, 10.83.9.120",
+            "timestamp": "2026-01-01 16:14:42",
             "date": "2026-01-01"
           }
         ],
         "unique_ips": [
-          "105.235.129.241, 10.81.6.140",
-          "105.235.129.241, 10.81.5.166"
+          "105.235.129.241, 10.83.9.120"
         ]
       }
     }

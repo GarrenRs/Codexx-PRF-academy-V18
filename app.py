@@ -704,7 +704,33 @@ def dashboard_view_user(user_id):
 
     return render_template('dashboard/view_user.html',
                            target_user=target_user,
-                           stats=stats)
+                           stats=stats,
+                           is_verified=target_user.get('is_verified', False))
+
+
+@app.route('/dashboard/access-instructions')
+@login_required
+def access_instructions():
+    """Show terms of use and how to get Full Access/Verified Badge"""
+    return render_template('dashboard/access_instructions.html')
+
+
+@app.route('/dashboard/users/toggle-verification/<user_id>', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_toggle_user_verification(user_id):
+    """Toggle user's verified status for gallery visibility"""
+    data = load_data()
+    users = data.get('users', [])
+    for user in users:
+        if str(user.get('id')) == str(user_id):
+            user['is_verified'] = not user.get('is_verified', False)
+            save_data(data)
+            status = "Verified" if user['is_verified'] else "Unverified"
+            flash(f"User {user['username']} status updated to {status}.", 'success')
+            break
+    return redirect(request.referrer or url_for('dashboard_users'))
 
 
 @app.route('/dashboard/user/<int:user_id>/toggle-demo', methods=['POST'])
@@ -1199,6 +1225,12 @@ def landing():
     return redirect(url_for('index'))
 
 
+@app.route('/verification')
+def verification():
+    """Professional Verification Standard page"""
+    return render_template('pages/verification.html')
+
+
 @app.route('/privacy')
 def privacy():
     """Privacy Policy page"""
@@ -1215,12 +1247,6 @@ def terms():
 def about():
     """About Academy page"""
     return render_template('pages/about.html')
-
-
-@app.route('/verification')
-def verification():
-    """Verification Process page"""
-    return render_template('pages/verification.html')
 
 
 @app.route('/mastery')
