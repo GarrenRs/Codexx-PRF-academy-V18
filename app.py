@@ -22,6 +22,12 @@ from config import get_config
 app = Flask(__name__)
 conf = get_config()
 app.config.from_object(conf)
+
+# Ensure database URL is correctly formatted for SQLAlchemy
+db_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+if db_url and db_url.startswith("postgres://"):
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace("postgres://", "postgresql://", 1)
+
 db.init_app(app)
 
 with app.app_context():

@@ -12,7 +12,11 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     
     # Database Settings
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://localhost/codexx')
+    _database_url = os.environ.get('DATABASE_URL', 'postgresql://localhost/codexx')
+    if _database_url and _database_url.startswith("postgres://"):
+        _database_url = _database_url.replace("postgres://", "postgresql://", 1)
+    
+    SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 10,
         'pool_recycle': 3600,
