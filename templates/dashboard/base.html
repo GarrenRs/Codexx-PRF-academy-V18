@@ -21,238 +21,203 @@
 
     <style>
         :root {
-            /* Fallback Codexx Brand Colors */
             --primary-gold: #D4AF37;
             --primary-dark: #B8941F;
-            --primary-light: #F4D03F;
+            --sidebar-width: 280px;
+            --sidebar-bg: #111111;
+            --card-bg: rgba(30, 30, 30, 0.6);
             --gold-gradient: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #B8941F 100%);
-            
-            --text-dark: #1a1a1a;
-            --text-light: #ffffff;
-            --bg-dark: #0a0a0a;
-            --bg-darker: #050505;
-            --border-gold: rgba(212, 175, 55, 0.3);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Use CSS variables from themes if available, otherwise use defaults */
         body {
             font-family: 'Poppins', sans-serif;
-            background: var(--bg-gradient, linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%));
-            color: var(--text-light);
-            min-height: 100vh;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            display: flex;
         }
 
+        /* Modern Sidebar */
         .sidebar {
-            background: var(--sidebar-bg, linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%));
-            min-height: 100vh;
-            color: var(--text-light);
-            transition: all 0.3s ease;
-            border-right: 2px solid var(--primary-color, var(--primary-gold));
-            box-shadow: 4px 0 20px rgba(212, 175, 55, 0.2);
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            border-right: 1px solid rgba(212, 175, 55, 0.1);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
         }
 
-        .sidebar .brand-logo {
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .brand-logo {
             display: flex;
             align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .brand-logo img {
+            height: 40px;
+            filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.3));
+        }
+
+        .brand-name {
             font-weight: 700;
-            font-size: 1.5rem;
-            color: var(--primary-color, var(--primary-gold));
-        }
-        
-        .sidebar .brand-logo img {
-            height: 50px;
-            margin-right: 10px;
+            font-size: 1.1rem;
+            color: #fff;
+            letter-spacing: 0.5px;
         }
 
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 1rem 1.5rem;
-            border-radius: 10px;
-            margin: 0.2rem 0;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
+        .sidebar-content {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
         }
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: linear-gradient(90deg, var(--nav-hover-bg, rgba(212, 175, 55, 0.2)), transparent);
-            color: var(--primary-color, var(--primary-gold));
-            border-left-color: var(--primary-color, var(--primary-gold));
-            transform: translateX(5px);
-        }
-
-        .sidebar .nav-link i {
-            margin-right: 10px;
-            width: 20px;
-            color: var(--primary-color, var(--primary-gold));
-        }
-
-        .sidebar .nav-link.active i {
-            color: var(--primary-color, var(--primary-gold));
-        }
-
-        .main-content {
-            padding: 2rem;
-            background: transparent;
-        }
-
-        .page-header {
-            background: var(--header-bg, rgba(212, 175, 55, 0.1));
-            border: 2px solid var(--border-color, var(--border-gold));
-            border-radius: 15px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.2);
-        }
-
-        .page-header h1 {
-            color: var(--primary-color, var(--primary-gold)) !important;
-            margin: 0;
-            font-weight: 700;
-        }
-
-        .card {
-            background: var(--card-bg, rgba(26, 26, 26, 0.8));
-            border: 2px solid var(--border-color, var(--border-gold));
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.15);
-            margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .card-header {
-            background: var(--primary-color, var(--primary-gold));
-            color: var(--card-header-text, #000000);
-            border-radius: 13px 13px 0 0 !important;
-            padding: 1rem 1.5rem;
-            border: none;
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.3);
+            margin: 1.5rem 0 0.75rem 0.5rem;
             font-weight: 600;
         }
 
-        .btn-primary {
-            background: var(--primary-color, var(--primary-gold));
-            border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 600;
-            color: var(--btn-text, #000000);
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-            color: var(--btn-text, #000000);
-        }
-
-        .form-control, .form-select {
-            background: var(--input-bg, rgba(26, 26, 26, 0.8));
-            border: 2px solid var(--border-color, var(--border-gold));
-            border-radius: 10px;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-            color: var(--text-light);
-        }
-
-        .form-control:focus, .form-select:focus {
-            background: var(--input-focus-bg, rgba(26, 26, 26, 0.95));
-            border-color: var(--primary-color, var(--primary-gold));
-            box-shadow: 0 0 0 0.2rem var(--focus-shadow, rgba(212, 175, 55, 0.25));
-            color: var(--text-light);
-        }
-
-        .form-label {
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.85rem 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: var(--transition);
+            margin-bottom: 4px;
             font-weight: 500;
-            color: var(--primary-color, var(--primary-gold)) !important;
+            font-size: 0.9rem;
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: var(--gold-gradient);
+            color: #000 !important;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-link.active i {
+            color: #000 !important;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .top-navbar {
+            height: 70px;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .content-body {
+            padding: 2rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Modern UI Components */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(212, 175, 55, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .page-title-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .page-title-section h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
         }
 
-        .table thead th {
-            background: var(--primary-color, var(--primary-gold));
-            color: var(--card-header-text, #000000);
-            border: none;
-            font-weight: 600;
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
         }
 
-        .table tbody td {
-            color: var(--text-light) !important;
-            font-weight: 500;
-            vertical-align: middle;
-        }
-
-        .table tbody tr:hover {
-            background: rgba(212, 175, 55, 0.1) !important;
-        }
-
-        .badge {
-            background: var(--primary-color, var(--primary-gold));
-            color: var(--card-header-text, #000000);
-            font-weight: 600;
-            padding: 0.5rem 0.8rem;
-            border-radius: 8px;
-        }
-
-        .breadcrumb-item {
-            color: rgba(255, 255, 255, 0.8) !important;
+        .breadcrumb-item a {
+            color: var(--primary-gold);
+            text-decoration: none;
         }
 
         .breadcrumb-item.active {
-            color: var(--primary-color, var(--primary-gold)) !important;
-            font-weight: 600;
+            color: rgba(255, 255, 255, 0.4);
         }
 
-        .card-title {
-            color: var(--text-light) !important;
-            font-weight: 600;
-        }
-
-        .card-text {
-            color: rgba(255, 255, 255, 0.9) !important;
-            font-weight: 500;
-        }
-
-        .text-muted {
-            color: rgba(255, 255, 255, 0.7) !important;
-            font-weight: 500;
-        }
-
-        .text-secondary {
-            color: rgba(255, 255, 255, 0.85) !important;
-            font-weight: 500;
-        }
-
-        .text-white {
-            color: #ffffff !important;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            color: #ffffff !important;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-        }
-
-        p, span, li, div {
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-
-        .small, small {
-            color: rgba(255, 255, 255, 0.8) !important;
-            font-weight: 500;
-        }
-
-        .alert {
-            color: var(--text-light) !important;
-        }
-
-        .btn-outline-primary {
-            color: var(--primary-color, var(--primary-gold)) !important;
-            border-color: var(--primary-color, var(--primary-gold)) !important;
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--primary-color, var(--primary-gold)) !important;
-            color: #000000 !important;
+        /* Mobile Adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                left: -100%;
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .main-wrapper {
+                margin-left: 0;
+            }
+            .top-navbar {
+                padding: 0 1rem;
+            }
         }
     </style>
     <style>
@@ -277,121 +242,143 @@
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-lg-3 col-md-4 sidebar p-0">
-                <div class="p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="brand-logo d-flex align-items-center">
-                            <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Academy Logo">
-                            <span style="font-size: 0.9rem;">Codexx Academy</span>
-                        </div>
-                        <a href="{{ url_for('catalog') }}" target="_blank" class="btn btn-sm" style="background: var(--gold-gradient); color: #000000; font-weight: 600; border-radius: 8px;" title="Feature Catalog">
-                            <i class="fas fa-book"></i>
-                        </a>
-                    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('dashboard') }}" class="brand-logo">
+                <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="Codexx Logo">
+                <span class="brand-name">Codexx Academy</span>
+            </a>
+        </div>
 
-                    <nav class="nav flex-column">
-                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-home"></i>Home
-                        </a>
-                        {% if not session.get('is_admin') %}
-                        <a class="nav-link {% if request.endpoint == 'dashboard_general' %}active{% endif %}" href="{{ url_for('dashboard_general') }}">
-                            <i class="fas fa-user-edit"></i>Identity & Vision
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_about' %}active{% endif %}" href="{{ url_for('dashboard_about') }}">
-                            <i class="fas fa-info-circle"></i>Value Proposition
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_skills' %}active{% endif %}" href="{{ url_for('dashboard_skills') }}">
-                            <i class="fas fa-star"></i>Core Competencies
-                        </a>
-                        <a class="nav-link {% if request.endpoint in ['dashboard_projects', 'dashboard_add_project', 'dashboard_edit_project'] %}active{% endif %}" href="{{ url_for('dashboard_projects') }}">
-                            <i class="fas fa-folder-open"></i>Portfolio Gallery
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_contact' %}active{% endif %}" href="{{ url_for('dashboard_contact') }}">
-                            <i class="fas fa-envelope"></i>Contact Info
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}" href="{{ url_for('dashboard_clients') }}">
-                            <i class="fas fa-users-cog"></i>Clients
-                            {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-2" style="color: var(--primary-gold); font-size: 0.8rem;"></i>{% endif %}
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_settings' %}active{% endif %}" href="{{ url_for('dashboard_settings') }}">
-                            <i class="fas fa-cog"></i>Settings
-                            {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-2" style="color: var(--primary-gold); font-size: 0.8rem;"></i>{% endif %}
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}" href="{{ url_for('dashboard_social') }}">
-                            <i class="fas fa-share-alt"></i>Social Media
-                            {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-2" style="color: var(--primary-gold); font-size: 0.8rem;"></i>{% endif %}
-                        </a>
-                        {% endif %}
+        <div class="sidebar-content">
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Overview</span>
+                </a>
 
-                        {% if session.get('is_admin') %}
-                        <a class="nav-link {% if request.endpoint == 'dashboard_users' %}active{% endif %}" href="{{ url_for('dashboard_users') }}">
-                            <i class="fas fa-user-shield"></i>Manage Users
-                        </a>
-                        <a class="nav-link {% if request.endpoint == 'dashboard_settings' %}active{% endif %}" href="{{ url_for('dashboard_settings') }}">
-                            <i class="fas fa-tools"></i>System Settings
-                        </a>
-                        <a class="nav-link" href="{{ url_for('landing') }}" target="_blank">
-                            <i class="fas fa-external-link-alt"></i>View Site
-                        </a>
-                        {% else %}
-                        <a class="nav-link" href="{{ url_for('user_portfolio', username=session.get('username', 'demo')) }}" target="_blank">
-                            <i class="fas fa-external-link-alt"></i>View My Portfolio
-                        </a>
-                        {% endif %}
-                        <a class="nav-link" href="{{ url_for('dashboard_logout') }}">
-                            <i class="fas fa-sign-out-alt"></i>Logout
-                        </a>
-                    </nav>
-                </div>
-            </div>
+                {% if session.get('is_admin') %}
+                <div class="nav-section-title">System Admin</div>
+                <a href="{{ url_for('dashboard_users') }}" class="nav-link {% if request.endpoint == 'dashboard_users' %}active{% endif %}">
+                    <i class="fas fa-users-cog"></i>
+                    <span>User Directory</span>
+                </a>
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Platform Inquiries</span>
+                </a>
+                {% else %}
+                <div class="nav-section-title">Portfolio Builder</div>
+                <a href="{{ url_for('dashboard_general') }}" class="nav-link {% if request.endpoint == 'dashboard_general' %}active{% endif %}">
+                    <i class="fas fa-id-card"></i>
+                    <span>Identity</span>
+                </a>
+                <a href="{{ url_for('dashboard_about') }}" class="nav-link {% if request.endpoint == 'dashboard_about' %}active{% endif %}">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Proposition</span>
+                </a>
+                <a href="{{ url_for('dashboard_skills') }}" class="nav-link {% if request.endpoint == 'dashboard_skills' %}active{% endif %}">
+                    <i class="fas fa-brain"></i>
+                    <span>Competencies</span>
+                </a>
+                <a href="{{ url_for('dashboard_projects') }}" class="nav-link {% if request.endpoint in ['dashboard_projects', 'dashboard_add_project', 'dashboard_edit_project'] %}active{% endif %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Gallery</span>
+                </a>
+                <a href="{{ url_for('dashboard_contact') }}" class="nav-link {% if request.endpoint == 'dashboard_contact' %}active{% endif %}">
+                    <i class="fas fa-address-book"></i>
+                    <span>Contact Info</span>
+                </a>
 
-            <!-- Main Content -->
-            <div class="col-lg-9 col-md-8 main-content">
-                <!-- Mobile Menu Button -->
-                <button class="btn btn-primary d-md-none mb-3" type="button" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i> Menu
-                </button>
-
-                <!-- DEMO VERSION BANNER -->
-                {% if is_demo_mode %}
-                <div class="alert alert-info border-0 shadow-sm" role="alert" style="background: rgba(212, 175, 55, 0.1); border-left: 4px solid var(--primary-gold);">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-crown me-3" style="color: var(--primary-gold); font-size: 1.2rem;"></i>
-                        <div>
-                            <strong style="color: var(--primary-gold);">Demo Account Active</strong>
-                            <p class="mb-0 small text-light opacity-75">
-                                You are viewing the demo mode. Some advanced features may have restrictions.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <div class="nav-section-title">Operations</div>
+                <a href="{{ url_for('dashboard_clients') }}" class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}">
+                    <i class="fas fa-users"></i>
+                    <span>CRM</span>
+                    {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-auto small opacity-50"></i>{% endif %}
+                </a>
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Messages</span>
+                </a>
+                <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
+                    <i class="fas fa-hashtag"></i>
+                    <span>Channels</span>
+                </a>
                 {% endif %}
 
-                <!-- Flash Messages -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter: brightness(0) invert(1);"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-
-                <!-- Page Header -->
-                <div class="page-header">
-                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-                    {% block breadcrumb %}{% endblock %}
-                </div>
-
-                <!-- Page Content -->
-                {% block content %}{% endblock %}
-            </div>
+                <div class="nav-section-title">Preference</div>
+                <a href="{{ url_for('dashboard_settings') }}" class="nav-link {% if request.endpoint == 'dashboard_settings' %}active{% endif %}">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Global Settings</span>
+                </a>
+            </nav>
         </div>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('dashboard_logout') }}" class="nav-link text-danger">
+                <i class="fas fa-power-off"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <header class="top-navbar">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-white d-lg-none me-3 p-0" onclick="toggleSidebar()">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <h6 class="mb-0 fw-600 opacity-75">Welcome, {{ session.get('username') }}</h6>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ url_for('catalog') }}" class="btn btn-sm btn-outline-light border-0 opacity-75" title="Catalog">
+                    <i class="fas fa-book-open"></i>
+                </a>
+                {% if session.get('is_admin') %}
+                <a href="{{ url_for('landing') }}" target="_blank" class="btn btn-sm btn-outline-gold px-3">
+                    <i class="fas fa-globe me-2"></i>Live Site
+                </a>
+                {% else %}
+                <a href="{{ url_for('user_portfolio', username=session.get('username')) }}" target="_blank" class="btn btn-sm btn-outline-gold px-3">
+                    <i class="fas fa-external-link-alt me-2"></i>My Portfolio
+                </a>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="content-body">
+            {% if is_demo_mode %}
+            <div class="alert alert-warning border-0 shadow-sm mb-4 py-3" style="background: rgba(212, 175, 55, 0.08); border-radius: 15px;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle me-3 fs-4 text-warning"></i>
+                    <div>
+                        <strong class="text-warning">Limited Access Environment</strong>
+                        <p class="mb-0 small opacity-75">Some features are restricted in demo mode. Contact admin for full access.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert" style="border-radius: 12px;">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="page-title-section">
+                <h1 class="text-white">{% block page_title %}Dashboard{% endblock %}</h1>
+                {% block breadcrumb %}{% endblock %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
     </div>
 
     <!-- Bootstrap 5 JS -->

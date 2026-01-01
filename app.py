@@ -633,6 +633,84 @@ def dashboard_users():
     return render_template('dashboard/users.html', users=users)
 
 
+@app.route('/dashboard/user/<int:user_id>')
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_view_user(user_id):
+    """View detailed information about a specific user"""
+    data = load_data()
+    users = data.get('users', [])
+    target_user = next((u for u in users if u.get('id') == user_id), None)
+    
+    if not target_user:
+        flash('User not found.', 'error')
+        return redirect(url_for('dashboard_users'))
+    
+    # Load user's portfolio data for stats
+    username = target_user['username']
+    user_portfolio_data = load_data(username=username)
+    
+    stats = {
+        'projects_count': len(user_portfolio_data.get('projects', [])),
+        'skills_count': len(user_portfolio_data.get('skills', [])),
+        'clients_count': len(user_portfolio_data.get('clients', [])),
+        'messages_count': len(user_portfolio_data.get('messages', [])),
+        'visitors_total': user_portfolio_data.get('visitors', {}).get('total', 0)
+    }
+    
+    return render_template('dashboard/view_user.html', target_user=target_user, stats=stats)
+
+
+@app.route('/dashboard/user/<int:user_id>/toggle-demo', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def toggle_user_demo(user_id):
+    """Toggle demo mode for a specific user"""
+    data = load_data()
+    users = data.get('users', [])
+    
+    for user in users:
+        if user.get('id') == user_id:
+            user['is_demo'] = not user.get('is_demo', True)
+            flash(f'User {user["username"]} access updated.', 'success')
+            break
+    
+    save_data(data)
+    return redirect(url_for('dashboard_view_user', user_id=user_id))
+
+
+@app.route('/dashboard/user/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def delete_user(user_id):
+    """Delete a user and their portfolio data"""
+    data = load_data()
+    users = data.get('users', [])
+    
+    target_user = next((u for u in users if u.get('id') == user_id), None)
+    if not target_user:
+        flash('User not found.', 'error')
+        return redirect(url_for('dashboard_users'))
+    
+    if target_user['username'] == 'admin':
+        flash('Cannot delete admin user.', 'error')
+        return redirect(url_for('dashboard_users'))
+    
+    # Remove from users list
+    data['users'] = [u for u in users if u.get('id') != user_id]
+    
+    # Remove their portfolio data
+    if 'portfolios' in data and target_user['username'] in data['portfolios']:
+        del data['portfolios'][target_user['username']]
+    
+    save_data(data)
+    flash(f'User {target_user["username"]} has been deleted.', 'success')
+    return redirect(url_for('dashboard_users'))
+
+
 def send_telegram_notification(message_text, username=None):
     """Send notification to Telegram - user-specific"""
     # Get credentials for specific user or global
@@ -1408,52 +1486,6 @@ def dashboard_login():
 
     return render_template('dashboard/login.html')
 
-@app.route('/dashboard/users/toggle_demo/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-@disable_in_demo
-def toggle_user_demo(user_id):
-    """Toggle user between Demo Mode and Full Access"""
-    try:
-        # Prevent toggling admin account
-        if user_id == 1:
-            flash('⚠️ Admin account access level cannot be changed', 'warning')
-            return redirect(url_for('dashboard_users'))
-        
-        data = load_data()
-        user_found = False
-        username_changed = None
-        
-        if 'users' in data:
-            for user in data['users']:
-                if user.get('id') == user_id:
-                    # Toggle is_demo flag (default to True if not set)
-                    current_status = user.get('is_demo', True)
-                    user['is_demo'] = not current_status
-                    user_found = True
-                    username_changed = user['username']
-                    
-                    # If this is the current logged in user, update their session too
-                    if session.get('user_id') == user_id:
-                        session['is_demo_mode'] = user['is_demo']
-                    
-                    status_text = "Demo Mode" if user['is_demo'] else "Full Access"
-                    break
-        
-        if user_found and username_changed:
-            save_data(data)
-            status_text = "Demo Mode" if data['users'][user_id - 1]['is_demo'] else "Full Access"
-            flash(f"✅ User '{username_changed}' switched to {status_text}", 'success')
-            log_ip_activity('user_access_changed', f"User: {username_changed} - Access: {status_text}")
-        else:
-            flash("⚠️ User not found", "error")
-    except Exception as e:
-        app.logger.error(f"Error toggling user demo mode: {str(e)}")
-        flash(f"Error: {str(e)}", "error")
-        
-    return redirect(url_for('dashboard_users'))
-
-
 @app.route('/dashboard/users/add', methods=['POST'])
 @login_required
 @admin_required
@@ -1532,56 +1564,6 @@ def dashboard_add_user():
         db.session.commit()
     except Exception as e:
         app.logger.error(f"Error syncing user to DB: {str(e)}")
-
-    flash(f'✅ User {username} created successfully!', 'success')
-    return redirect(url_for('dashboard_users'))
-
-@app.route('/dashboard/users/delete/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-@disable_in_demo
-def delete_user(user_id):
-    """Delete a user account and all their data"""
-    try:
-        data = load_data()
-        user_found = False
-        username_to_delete = None
-        
-        # Prevent deleting admin account
-        if user_id == 1:  # Admin user typically has ID 1
-            flash('⚠️ Cannot delete the admin account', 'error')
-            return redirect(url_for('dashboard_users'))
-        
-        # Prevent self-deletion
-        if session.get('user_id') == user_id:
-            flash('⚠️ You cannot delete your own account', 'error')
-            return redirect(url_for('dashboard_users'))
-        
-        if 'users' in data:
-            for i, user in enumerate(data['users']):
-                if user.get('id') == user_id:
-                    username_to_delete = user.get('username')
-                    user_found = True
-                    # Remove user from list
-                    data['users'].pop(i)
-                    break
-        
-        if user_found and username_to_delete:
-            # Delete user's portfolio data
-            if 'portfolios' in data and username_to_delete in data['portfolios']:
-                del data['portfolios'][username_to_delete]
-            
-            save_data(data)
-            flash(f'✅ User account "{username_to_delete}" and all their data have been permanently deleted', 'success')
-            log_ip_activity('user_deleted', f"User: {username_to_delete} - Deleted by: {session.get('username')}")
-        else:
-            flash('⚠️ User not found', 'error')
-    except Exception as e:
-        app.logger.error(f"Error deleting user: {str(e)}")
-        flash(f"Error: {str(e)}", "error")
-        
-    return redirect(url_for('dashboard_users'))
-
 
 @app.route('/dashboard/logout')
 @login_required

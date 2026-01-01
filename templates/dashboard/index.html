@@ -12,108 +12,256 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row g-4">
     <!-- Stats Cards -->
-    <div class="col-md-3 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="fas fa-folder-open fa-3x mb-3" style="color: var(--primary-gold);"></i>
-                <h5 class="card-title">Projects</h5>
-                <p class="display-6 fw-bold text-white">{{ stats.projects }}</p>
+    {% if session.get('is_admin') %}
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-users-cog fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">System</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Total Users</h6>
+                <h3 class="mb-0 text-white fw-700">{{ data.get('users', [])|length }}</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="fas fa-star fa-3x mb-3" style="color: var(--primary-gold);"></i>
-                <h5 class="card-title">Skills</h5>
-                <p class="display-6 fw-bold text-white">{{ stats.skills }}</p>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-user-check fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Live</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Active Portfolios</h6>
+                <h3 class="mb-0 text-white fw-700">{{ data.get('users', [])|selectattr('is_demo', 'equalto', false)|list|length }}</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="fas fa-envelope fa-3x mb-3" style="color: var(--primary-gold);"></i>
-                <h5 class="card-title">Messages</h5>
-                <p class="display-6 fw-bold text-white">{{ stats.messages }}</p>
-                {% if stats.unread_messages > 0 %}
-                <span class="badge bg-danger">{{ stats.unread_messages }} New</span>
-                {% endif %}
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-history fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">Recent</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">System Messages</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.messages }}</h3>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-4">
-        <div class="card h-100 text-center">
-            <div class="card-body">
-                <i class="fas fa-users fa-3x mb-3" style="color: var(--primary-gold);"></i>
-                <h5 class="card-title">Visitors</h5>
-                <p class="display-6 fw-bold text-white">{{ stats.visitors }}</p>
-                <small class="text-muted">+{{ stats.today_visitors }} Today</small>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-server fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">Platform</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Total Traffic</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.visitors }}</h3>
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-briefcase fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">Total</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Active Projects</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.projects }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-brain fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">Skills</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Core Competencies</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.skills }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-envelope-open-text fa-lg text-gold"></i>
+                    </div>
+                    {% if stats.unread_messages > 0 %}
+                    <span class="badge bg-danger rounded-pill px-3">{{ stats.unread_messages }} New</span>
+                    {% else %}
+                    <span class="badge bg-soft-gold text-gold rounded-pill px-3">Messages</span>
+                    {% endif %}
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Inbound Requests</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.messages }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-shape bg-soft-gold rounded-3 p-3">
+                        <i class="fas fa-chart-line fa-lg text-gold"></i>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">+{{ stats.today_visitors }} today</span>
+                </div>
+                <h6 class="text-muted mb-1 fw-600">Visitor Reach</h6>
+                <h3 class="mb-0 text-white fw-700">{{ stats.visitors }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
-<div class="row mt-4">
+<div class="row mt-5 g-4">
     <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-rocket me-2"></i>Quick Actions
+        <div class="card h-100">
+            <div class="card-header bg-transparent border-bottom border-white border-opacity-10 p-4">
+                <h5 class="mb-0 text-white fw-600"><i class="fas fa-bolt me-2 text-gold"></i>Quick Action Center</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <div class="row g-3">
+                    {% if session.get('is_admin') %}
                     <div class="col-md-6">
-                        <a href="{{ url_for('dashboard_add_project') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-plus me-2"></i>Add New Project
+                        <a href="{{ url_for('dashboard_users') }}" class="btn btn-gold-gradient w-100 py-3 rounded-3 shadow-sm">
+                            <i class="fas fa-users-cog me-2"></i>Manage Users
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="{{ url_for('dashboard_general') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-user-edit me-2"></i>Edit Profile
+                        <a href="{{ url_for('dashboard_settings') }}" class="btn btn-outline-gold w-100 py-3 rounded-3">
+                            <i class="fas fa-shield-alt me-2"></i>System Security
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="{{ url_for('dashboard_messages') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-comment-alt me-2"></i>View Messages
+                        <a href="{{ url_for('landing') }}" target="_blank" class="btn btn-outline-gold w-100 py-3 rounded-3">
+                            <i class="fas fa-globe me-2"></i>Platform View
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="{{ url_for('user_portfolio', username=session.get('username')) }}" target="_blank" class="btn btn-success w-100">
-                            <i class="fas fa-external-link-alt me-2"></i>View Portfolio
+                        <a href="{{ url_for('dashboard_logout') }}" class="btn btn-outline-danger w-100 py-3 rounded-3">
+                            <i class="fas fa-power-off me-2"></i>Terminate Session
                         </a>
                     </div>
+                    {% else %}
+                    <div class="col-md-6">
+                        <a href="{{ url_for('dashboard_add_project') }}" class="btn btn-gold-gradient w-100 py-3 rounded-3 shadow-sm">
+                            <i class="fas fa-plus-circle me-2"></i>New Project Entry
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('dashboard_general') }}" class="btn btn-outline-gold w-100 py-3 rounded-3">
+                            <i class="fas fa-id-badge me-2"></i>Update Identity
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('dashboard_messages') }}" class="btn btn-outline-gold w-100 py-3 rounded-3">
+                            <i class="fas fa-comments-alt me-2"></i>Review Inbox
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('dashboard_settings') }}" class="btn btn-outline-gold w-100 py-3 rounded-3">
+                            <i class="fas fa-cog me-2"></i>System Config
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-shield-alt me-2"></i>Account Status
+        <div class="card h-100">
+            <div class="card-header bg-transparent border-bottom border-white border-opacity-10 p-4">
+                <h5 class="mb-0 text-white fw-600"><i class="fas fa-shield-check me-2 text-gold"></i>Account Diagnostics</h5>
             </div>
-            <div class="card-body text-white">
-                <div class="text-center mb-3">
-                    {% if is_demo_mode %}
-                    <i class="fas fa-user-circle fa-4x mb-2 text-muted"></i>
-                    <h5 class="text-warning">Free Plan</h5>
-                    <p class="small text-muted">Upgrade for more features</p>
-                    <button class="btn btn-sm btn-primary w-100">Upgrade Now</button>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    {% if session.get('is_admin') %}
+                    <div class="avatar-xl mx-auto mb-3 bg-soft-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user-shield fa-3x text-gold"></i>
+                    </div>
+                    <h5 class="text-white fw-700">Root Administrator</h5>
+                    <p class="small opacity-50 mb-0">Full System Sovereignty</p>
+                    {% elif is_demo_mode %}
+                    <div class="avatar-xl mx-auto mb-3 bg-soft-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-user-circle fa-3x text-muted"></i>
+                    </div>
+                    <h5 class="text-warning fw-700">Restricted Plan</h5>
+                    <p class="small opacity-50 mb-4">Unlock full analytics & CRM features</p>
+                    <a href="#" class="btn btn-gold-gradient btn-sm px-4">Upgrade Workspace</a>
                     {% else %}
-                    <i class="fas fa-crown fa-4x mb-2 text-warning"></i>
-                    <h5 class="text-success">Pro Plan</h5>
-                    <p class="small text-muted">Full access active</p>
+                    <div class="avatar-xl mx-auto mb-3 bg-soft-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-crown fa-3x text-gold"></i>
+                    </div>
+                    <h5 class="text-success fw-700">Premium Partner</h5>
+                    <p class="small opacity-50 mb-0">Professional Tier Active</p>
                     {% endif %}
                 </div>
-                <hr>
-                <div class="small">
-                    <p class="mb-1"><strong>Username:</strong> {{ session.get('username') }}</p>
-                    <p class="mb-0"><strong>Last Login:</strong> {{ session.get('last_login', 'Today') }}</p>
+                <div class="border-top border-white border-opacity-10 pt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small opacity-50">Authorized as</span>
+                        <span class="small fw-600">{{ session.get('username') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small opacity-50">Last session</span>
+                        <span class="small fw-600">{{ session.get('last_login', 'Online Now') }}</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .bg-soft-gold { background: rgba(212, 175, 55, 0.1); }
+    .text-gold { color: var(--primary-gold); }
+    .btn-gold-gradient {
+        background: var(--gold-gradient);
+        color: #000;
+        font-weight: 700;
+        border: none;
+        transition: var(--transition);
+    }
+    .btn-gold-gradient:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        color: #000;
+    }
+    .btn-outline-gold {
+        color: var(--primary-gold);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        font-weight: 600;
+        transition: var(--transition);
+    }
+    .btn-outline-gold:hover {
+        background: rgba(212, 175, 55, 0.05);
+        border-color: var(--primary-gold);
+        color: var(--primary-gold);
+        transform: translateY(-2px);
+    }
+    .fw-600 { font-weight: 600; }
+    .fw-700 { font-weight: 700; }
+</style>
 {% endblock %}
