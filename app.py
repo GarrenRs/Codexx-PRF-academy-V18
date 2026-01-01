@@ -16,6 +16,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from sqlalchemy import text
 from models import db, User, Workspace, Project, Skill, Client, Message, VisitorLog
 from config import get_config
 
@@ -31,7 +32,13 @@ if db_url and db_url.startswith("postgres://"):
 db.init_app(app)
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        # Verify connection
+        db.session.execute(text('SELECT 1'))
+        app.logger.info("Database connection verified successfully.")
+    except Exception as e:
+        app.logger.error(f"Database initialization error: {str(e)}")
 
 def get_current_theme():
     """Helper to get current user's theme for dashboard"""
@@ -556,76 +563,12 @@ def disable_in_demo(f):
     return decorated_function
 
 
+# Registration route removed - New accounts are managed by admin via User Directory
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration from landing page"""
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        email = request.form.get('email')
-
-        if not username or not password or not email:
-            flash('All fields are required', 'error')
-            return redirect(url_for('register'))
-
-        data = load_data()
-        if 'users' not in data:
-            data['users'] = []
-
-        if any(u['username'] == username for u in data['users']):
-            flash('Username already exists', 'error')
-            return redirect(url_for('register'))
-
-        new_user = {
-            'id': len(data['users']) + 1,
-            'username': username,
-            'password_hash': generate_password_hash(password),
-            'email': email,
-            'role': 'user',
-            'is_demo': True,  # New users get Demo access by default
-            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        data['users'].append(new_user)
-        
-        # Initialize a completely empty portfolio for the new user
-        if 'portfolios' not in data:
-            data['portfolios'] = {}
-            
-        data['portfolios'][username] = {
-            'username': username,
-            'name': '',
-            'title': '',
-            'description': '',
-            'about': '',
-            'photo': '',
-            'skills': [],
-            'projects': [],
-            'messages': [],
-            'clients': [],
-            'contact': {
-                'email': '',
-                'phone': '',
-                'location': ''
-            },
-            'social': {
-                'linkedin': '',
-                'github': '',
-                'twitter': '',
-                'instagram': '',
-                'facebook': '',
-                'youtube': '',
-                'behance': '',
-                'dribbble': ''
-            },
-            'settings': {'theme': 'luxury-gold'},
-            'visitors': {'total': 0, 'today': [], 'unique_ips': []}
-        }
-        
-        save_data(data)
-        flash('Registration successful! Your account is active and ready to use. Please login.', 'success')
-        return redirect(url_for('dashboard_login'))
-
-    return render_template('register.html')
+    """Disabled registration route"""
+    flash('Registration is currently disabled. Please contact the administrator.', 'warning')
+    return redirect(url_for('login'))
 
 
 @app.route('/dashboard/users')
