@@ -145,5 +145,40 @@
     "activity": "user_login",
     "details": "User: Codexx",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.81.4.39",
+    "timestamp": "2026-01-01 03:29:30",
+    "activity": "failed_login",
+    "details": "Username: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.81.4.39",
+    "timestamp": "2026-01-01 03:29:40",
+    "activity": "failed_login",
+    "details": "Username: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.81.11.120",
+    "timestamp": "2026-01-01 03:29:49",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.81.5.166",
+    "timestamp": "2026-01-01 03:32:31",
+    "activity": "user_login",
+    "details": "User: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.88, 10.81.11.120",
+    "timestamp": "2026-01-01 03:34:24",
+    "activity": "contact_message",
+    "details": "From: raesonrs@gmail.com to Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0"
   }
 ]

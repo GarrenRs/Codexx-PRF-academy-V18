@@ -1022,35 +1022,33 @@ def dashboard_clear_chat(user_id):
 @app.route('/contact/academy', methods=['POST'])
 def contact_academy():
     """Public contact form for the Academy"""
-    # Force get form data
-    name = request.form.get('name')
-    email = request.form.get('email')
-    message_content = request.form.get('message')
-    
-    # Check session
-    user_id = session.get('user_id')
-    username = session.get('username')
-    user_email = session.get('email')
-    
-    # If logged in, override name and email from session
-    if user_id:
-        name = username
-        email = user_email
-
-    # Debug logs (internal)
-    app.logger.info(f"Contact attempt - Name: {name}, Email: {email}")
-
-    if not message_content:
-        flash('Please enter a message.', 'danger')
-        return redirect(url_for('index', _anchor='academy-contact'))
-
-    # Fallback for email if missing for some reason
-    if not email:
-        email = 'no-email@codexx.academy'
-
     try:
+        # Force get form data
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message_content = request.form.get('message')
+        
+        # Check session
+        user_id = session.get('user_id')
+        username = session.get('username')
+        user_email = session.get('email')
+        
+        # If logged in, override name and email from session
+        if user_id:
+            name = username
+            email = user_email
+
+        if not message_content:
+            flash('Please enter a message.', 'danger')
+            return redirect(url_for('index', _anchor='academy-contact'))
+
+        # Fallback for email if missing for some reason
+        if not email:
+            email = 'no-email@codexx.academy'
+
+        # 1. Save to Database
         new_message = Message(
-            name=name or 'Anonymous Member' if user_id else 'Guest',
+            name=name or 'Guest',
             email=email,
             message=message_content,
             is_internal=False,
@@ -1059,10 +1057,21 @@ def contact_academy():
         )
         db.session.add(new_message)
         db.session.commit()
+
+        # 2. Telegram Notification (Direct Integration)
+        tg_msg = f"🏛 *Academy Inquiry*\n\n*From:* {name}\n*Email:* {email}\n\n*Message:*\n{message_content}"
+        # Send via admin telegram settings if available
+        send_telegram_notification(tg_msg, username='admin')
+
+        # 3. Email Notification (SMTP Integration)
+        email_body = f"New inquiry from {name} ({email}):\n\n{message_content}"
+        send_email(os.environ.get('ADMIN_EMAIL', 'admin@codexx.academy'), 
+                  "New Academy Inquiry", email_body, username='admin')
+
         flash('Success! Your message has been delivered to the Academy team.', 'success')
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error saving message: {str(e)}")
+        app.logger.error(f"Error in contact_academy: {str(e)}")
         flash('System error. Please try again later.', 'danger')
     
     return redirect(url_for('index', _anchor='academy-contact'))
@@ -2183,8 +2192,40 @@ def dashboard_social():
 def dashboard_messages():
     """List all messages for current user with priority filtering"""
     username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    # Load user's isolated data
     data = load_data(username=username)
-    all_messages = data.get('messages', [])
+    user_messages = data.get('messages', [])
+    
+    all_messages = []
+    
+    # Add user-specific messages from JSON
+    for msg in user_messages:
+        msg_copy = msg.copy()
+        msg_copy['is_db'] = False
+        all_messages.append(msg_copy)
+    
+    # If admin, also fetch global messages from the database
+    if is_admin:
+        try:
+            # Fetch messages from PostgreSQL that are not internal
+            db_messages = Message.query.filter_by(is_internal=False).order_by(Message.created_at.desc()).all()
+            for msg in db_messages:
+                all_messages.append({
+                    'id': str(msg.id), # Ensure ID is string for uniform handling
+                    'name': msg.name,
+                    'email': msg.email,
+                    'message': msg.message,
+                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': msg.is_read,
+                    'request_type': 'Academy Inquiry' if not msg.sender_id else 'Portfolio Message',
+                    'interest_area': 'General' if not msg.sender_id else 'Direct',
+                    'priority': 'normal',
+                    'is_db': True
+                })
+        except Exception as e:
+            app.logger.error(f"Error fetching DB messages: {str(e)}")
     
     # Get priority filter from query parameter
     priority_filter = request.args.get('priority', 'all')
@@ -2210,14 +2251,39 @@ def dashboard_messages():
                          priority_filter=priority_filter, priority_stats=priority_stats)
 
 
-@app.route('/dashboard/messages/view/<int:message_id>')
+@app.route('/dashboard/messages/view/<message_id>')
 @login_required
 def dashboard_view_message(message_id):
-    """View specific message for current user"""
+    """View specific message for current user or admin"""
     username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                if not db_msg.is_read:
+                    db_msg.is_read = True
+                    db.session.commit()
+                
+                message = {
+                    'id': db_msg.id,
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message,
+                    'date': db_msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': db_msg.is_read,
+                    'request_type': 'Academy Inquiry'
+                }
+                return render_template('dashboard/view_message.html', message=message)
+        except:
+            pass
+
+    # Fallback to JSON isolation
     data = load_data(username=username)
     message = next(
-        (m for m in data.get('messages', []) if m.get('id') == message_id),
+        (m for m in data.get('messages', []) if str(m.get('id')) == str(message_id)),
         None)
 
     if not message:
@@ -2225,48 +2291,83 @@ def dashboard_view_message(message_id):
         return redirect(url_for('dashboard_messages'))
 
     if not message.get('read', False):
-        # We need to update mark_message_as_read to support isolation as well, 
-        # but for now we can update the message directly here and save
         message['read'] = True
         save_data(data, username=username)
 
     return render_template('dashboard/view_message.html', message=message)
 
 
-@app.route('/dashboard/messages/delete/<int:message_id>')
+@app.route('/dashboard/messages/delete/<message_id>')
 @login_required
 @disable_in_demo
 def dashboard_delete_message(message_id):
-    """Delete message for current user"""
+    """Delete message for current user or admin"""
     username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                db.session.delete(db_msg)
+                db.session.commit()
+                flash('Academy message deleted successfully', 'success')
+                return redirect(url_for('dashboard_messages'))
+        except:
+            pass
+
     data = load_data(username=username)
     data['messages'] = [
-        m for m in data.get('messages', []) if m.get('id') != message_id
+        m for m in data.get('messages', []) if str(m.get('id')) != str(message_id)
     ]
     save_data(data, username=username)
     flash('Message deleted successfully', 'success')
     return redirect(url_for('dashboard_messages'))
 
 
-@app.route('/dashboard/messages/convert/<int:message_id>')
+@app.route('/dashboard/messages/convert/<message_id>')
 @login_required
 @disable_in_demo
 def dashboard_convert_message_to_client(message_id):
-    """Convert message to client for current user"""
+    """Convert message to client for current user or admin"""
     username = session.get('username')
-    data = load_data(username=username)
-    message = next(
-        (m for m in data.get('messages', []) if m.get('id') == message_id),
-        None)
+    is_admin = session.get('is_admin')
+    
+    message = None
+    
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                message = {
+                    'id': str(db_msg.id),
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message
+                }
+        except:
+            pass
+
+    # Fallback to JSON if not found in DB
+    if not message:
+        data = load_data(username=username)
+        message = next(
+            (m for m in data.get('messages', []) if str(m.get('id')) == str(message_id)),
+            None)
+        current_data = data # Keep reference for saving
+    else:
+        current_data = load_data(username=username)
 
     if not message:
         flash('Message not found', 'error')
         return redirect(url_for('dashboard_messages'))
 
-    if 'clients' not in data:
-        data['clients'] = []
+    if 'clients' not in current_data:
+        current_data['clients'] = []
 
-    client_ids = [c.get('id', 0) for c in data.get('clients', [])]
+    client_ids = [c.get('id', 0) for c in current_data.get('clients', []) if isinstance(c.get('id'), int)]
     new_id = max(client_ids) + 1 if client_ids else 1
 
     new_client = {
@@ -2275,7 +2376,7 @@ def dashboard_convert_message_to_client(message_id):
         'email': message.get('email', ''),
         'phone': '',
         'company': '',
-        'project_title': '',
+        'project_title': 'Inquiry from ' + (message.get('name') or 'Guest'),
         'project_description': message.get('message', ''),
         'status': 'lead',
         'price': '',
@@ -2285,8 +2386,8 @@ def dashboard_convert_message_to_client(message_id):
         'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    data['clients'].append(new_client)
-    save_data(data, username=username)
+    current_data['clients'].append(new_client)
+    save_data(current_data, username=username)
 
     flash('Message converted to client successfully', 'success')
     return redirect(url_for('dashboard_edit_client', client_id=new_id))

@@ -271,6 +271,16 @@
                     <i class="fas fa-comment-dots"></i>
                     <span>Platform Inquiries</span>
                 </a>
+                
+                <div class="nav-section-title">Conversion Tools</div>
+                <a href="{{ url_for('dashboard_clients') }}" class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Convert Leads</span>
+                </a>
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Message to Client</span>
+                </a>
                 {% else %}
                 <div class="nav-section-title">Portfolio Builder</div>
                 <a href="{{ url_for('dashboard_general') }}" class="nav-link {% if request.endpoint == 'dashboard_general' %}active{% endif %}">
