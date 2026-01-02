@@ -362,7 +362,7 @@
                     
                     {% if is_verified_professional %}
                     <div class="col-md-4">
-                        <div class="portfolio-card">
+                        <div class="portfolio-card" style="border: 1.5px solid var(--primary-gold); box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);">
                             {% if portfolio.photo %}
                                 <img src="{{ url_for('static', filename=portfolio.photo.replace('static/', '')) }}" alt="{{ portfolio.name }}" class="profile-img">
                             {% else %}

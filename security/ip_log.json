@@ -404,5 +404,26 @@
     "activity": "user_login",
     "details": "User: Codexx",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.130.45, 10.81.9.55",
+    "timestamp": "2026-01-02 22:29:49",
+    "activity": "failed_login",
+    "details": "Username: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.130.45, 10.81.9.55",
+    "timestamp": "2026-01-02 22:29:57",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.130.45, 10.81.9.55",
+    "timestamp": "2026-01-02 22:42:13",
+    "activity": "user_login",
+    "details": "User: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
   }
 ]

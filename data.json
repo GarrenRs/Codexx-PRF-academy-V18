@@ -47,20 +47,12 @@
     {
       "id": 1,
       "username": "Codexx",
-      "password_hash": "scrypt:32768:8:1$S4eXMZsW4guDMrM4$816fe1afe638f09c7983124f931ebdb98a4fc3a4aa637619f7396bc932327fa1ae35541df8413e91cdf9633e5f34a8e5aceffecd21df349e70aa198fc1e879ed",
+      "password_hash": "scrypt:32768:8:1$O7WxAgTrKh4MuVV5$9c3c1536aec2ba48b2a4c21e2f11a2156155b3f9b001c38b70c76fd62e1119f4e9aac112fe26407f4374d384c2bef2d34df46866eadac9eb830bdcb15a843ac0",
       "email": "sarah@example.com",
       "role": "user",
       "is_demo": false,
-      "created_at": "2026-01-02 21:09:10"
-    },
-    {
-      "id": 2,
-      "username": "Raeson",
-      "password_hash": "scrypt:32768:8:1$djU2aqmeIZQJH2uB$e0915c34b27facdeb56d0c91f021f2bf8d483568d751191345fa122af33747d6897391eb2c460b4c225766360d6c997a8c46be7c810e70a1547028a4974c96d1",
-      "email": "sarah@example.com",
-      "role": "user",
-      "is_demo": true,
-      "created_at": "2026-01-02 21:17:22"
+      "created_at": "2026-01-02 22:31:49",
+      "is_verified": true
     }
   ],
   "portfolios": {
@@ -72,7 +64,43 @@
       "about": "",
       "photo": "",
       "skills": [],
-      "projects": [],
+      "projects": [
+        {
+          "id": 1,
+          "title": "Automation",
+          "short_description": "Choose a clear and descriptive project title",
+          "content": "hort description: 1-2 lines only\r\n Full content: Explain the project in detail\r\n Add a clear and attractive image",
+          "description": "Choose a clear and descriptive project title",
+          "image": "static/assets/uploads/project_Codexx_1_20260102_224257_photo_2025-12-01_18-53-08.jpg",
+          "demo_url": "#",
+          "github_url": "#",
+          "technologies": [
+            "React"
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Dev app Mobile",
+          "short_description": "Specify technologies used accurately",
+          "content": "Sub-heading:\r\n\r\n<h3>Features</h3>\r\nBullet list:\r\n\r\n<ul>\r\n  <li>Easy to use</li>\r\n</ul>\r\nRegular paragraph:\r\n\r\n<p>Project description...</p>\r\nOr write plain text without HTML",
+          "description": "Specify technologies used accurately",
+          "image": "static/assets/uploads/project_Codexx_2_20260102_224342_original-279f573954c5eca9106211062000534a.webp",
+          "demo_url": "#",
+          "github_url": "#",
+          "technologies": []
+        },
+        {
+          "id": 3,
+          "title": "Application web",
+          "short_description": "Add demo and code repository links",
+          "content": "Full content: Explain the project in detail\r\n Add a clear and attractive image",
+          "description": "Add demo and code repository links",
+          "image": "static/assets/uploads/project_Codexx_3_20260102_224419_ChatGPT_Image_Dec_6_2025_10_29_03_PM.png",
+          "demo_url": "#",
+          "github_url": "#",
+          "technologies": []
+        }
+      ],
       "messages": [],
       "clients": [],
       "contact": {
@@ -89,39 +117,62 @@
         "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 0,
-        "today": [],
-        "unique_ips": []
-      }
-    },
-    "Raeson": {
-      "username": "Raeson",
-      "name": "",
-      "title": "",
-      "description": "",
-      "about": "",
-      "photo": "",
-      "skills": [],
-      "projects": [],
-      "messages": [],
-      "clients": [],
-      "contact": {
-        "email": "",
-        "phone": "",
-        "location": ""
-      },
-      "social": {
-        "linkedin": "",
-        "github": "",
-        "twitter": ""
-      },
-      "settings": {
-        "theme": "luxury-gold"
-      },
-      "visitors": {
-        "total": 0,
-        "today": [],
-        "unique_ips": []
+        "total": 6,
+        "today": [
+          {
+            "ip": "105.235.130.45, 10.81.13.40",
+            "timestamp": "2026-01-02 22:31:57",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.6.140",
+            "timestamp": "2026-01-02 22:32:03",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.2.54",
+            "timestamp": "2026-01-02 22:45:19",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.11.120",
+            "timestamp": "2026-01-02 22:45:41",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.0.229",
+            "timestamp": "2026-01-02 22:45:59",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.6.140",
+            "timestamp": "2026-01-02 22:46:47",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.11.120",
+            "timestamp": "2026-01-02 22:50:00",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.13.40",
+            "timestamp": "2026-01-02 22:50:15",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.130.45, 10.81.9.55",
+            "timestamp": "2026-01-02 22:50:29",
+            "date": "2026-01-02"
+          }
+        ],
+        "unique_ips": [
+          "105.235.130.45, 10.81.0.229",
+          "105.235.130.45, 10.81.2.54",
+          "105.235.130.45, 10.81.11.120",
+          "105.235.130.45, 10.81.13.40",
+          "105.235.130.45, 10.81.9.55",
+          "105.235.130.45, 10.81.6.140"
+        ]
       }
     }
   }

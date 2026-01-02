@@ -45,8 +45,8 @@
                         </button>
                     </form>
                     <form action="{{ url_for('dashboard_toggle_user_verification', user_id=target_user.id) }}" method="POST">
-                        <button type="submit" class="btn {% if target_user.is_verified %}btn-success{% else %}btn-outline-gold{% endif %} w-100 text-center btn-sm mb-2 py-2">
-                            <i class="fas fa-shield-alt me-2"></i> {% if target_user.is_verified %}Disable Badge{% else %}Enable Badge{% endif %}
+                        <button type="submit" class="btn {% if target_user.is_verified %}btn-success{% else %}btn-outline-gold{% endif %} w-100 text-center btn-sm mb-2 py-2 shadow-sm">
+                            <i class="fas fa-shield-alt me-2"></i> {% if target_user.is_verified %}Verified Professional{% else %}Enable Badge{% endif %}
                         </button>
                     </form>
                     <button class="btn btn-outline-danger w-100 text-center btn-sm py-2" onclick="confirmDelete('{{ target_user.id }}')">

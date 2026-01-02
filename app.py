@@ -726,17 +726,50 @@ def access_instructions():
 @admin_required
 @disable_in_demo
 def dashboard_toggle_user_verification(user_id):
-    """Toggle user's verified status for gallery visibility"""
-    data = load_data()
-    users = data.get('users', [])
-    for user in users:
-        if str(user.get('id')) == str(user_id):
-            user['is_verified'] = not user.get('is_verified', False)
-            save_data(data)
-            status = "Verified" if user['is_verified'] else "Unverified"
-            flash(f"User {user['username']} status updated to {status}.", 'success')
-            break
-    return redirect(request.referrer or url_for('dashboard_users'))
+    """Toggle user's verified status with criteria check"""
+    try:
+        data = load_data()
+        users = data.get('users', [])
+        target_user = None
+        for u in users:
+            if str(u.get('id')) == str(user_id):
+                target_user = u
+                break
+        
+        if not target_user:
+            flash('User not found.', 'error')
+            return redirect(url_for('dashboard_users'))
+
+        # Check criteria only when enabling
+        if not target_user.get('is_verified', False):
+            # Conditions: Full Access (is_demo is False) AND at least 3 projects
+            user_portfolio_data = load_data(username=target_user['username'])
+            projects_count = len(user_portfolio_data.get('projects', []))
+            is_full_access = not target_user.get('is_demo', True)
+
+            if not is_full_access or projects_count < 3:
+                flash(f'Criteria not met: Full Access and 3 projects required. (Current: {"Full Access" if is_full_access else "Demo"}, {projects_count} projects)', 'warning')
+                return redirect(url_for('dashboard_view_user', user_id=user_id))
+            
+            target_user['is_verified'] = True
+            flash('Verification Badge enabled successfully! Portfolio now visible in the main gallery.', 'success')
+        else:
+            target_user['is_verified'] = False
+            flash('Verification Badge disabled.', 'info')
+
+        save_data(data)
+        
+        # Sync with Database
+        user_obj = User.query.get(str(user_id))
+        if user_obj:
+            user_obj.is_verified = target_user['is_verified']
+            db.session.commit()
+            
+        return redirect(url_for('dashboard_view_user', user_id=user_id))
+    except Exception as e:
+        app.logger.error(f"Error toggling verification: {str(e)}")
+        flash('An error occurred while updating verification status.', 'error')
+        return redirect(url_for('dashboard_users'))
 
 
 @app.route('/dashboard/user/<int:user_id>/toggle-demo', methods=['POST'])

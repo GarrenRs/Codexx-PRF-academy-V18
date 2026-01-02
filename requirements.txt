@@ -50,3 +50,8 @@ pyjwt
 requests
 weasyprint
 werkzeug
+alembic
+apscheduler
+python-dotenv
+requests
+sqlalchemy
