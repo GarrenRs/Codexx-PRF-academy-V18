@@ -66,6 +66,7 @@ class Message(db.Model):
     receiver_id = db.Column(db.String(36)) # For internal messaging
     parent_id = db.Column(db.String(36)) # To link replies to original message
     sender_role = db.Column(db.String(20), default='visitor')
+    category = db.Column(db.String(30), default='portfolio') # 'platform', 'portfolio', 'internal'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class VisitorLog(db.Model):

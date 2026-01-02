@@ -27,3 +27,7 @@ APScheduler
 python-dotenv
 requests
 sqlalchemy
+alembic
+APScheduler
+python-dotenv
+requests

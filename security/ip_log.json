@@ -278,5 +278,26 @@
     "activity": "portfolio_contact",
     "details": "To: Codexx",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0"
+  },
+  {
+    "ip": "105.235.133.236, 10.83.7.67",
+    "timestamp": "2026-01-02 15:23:18",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.83.11.58",
+    "timestamp": "2026-01-02 15:25:18",
+    "activity": "user_login",
+    "details": "User: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.83.7.67",
+    "timestamp": "2026-01-02 15:32:46",
+    "activity": "portfolio_contact",
+    "details": "To: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0"
   }
 ]

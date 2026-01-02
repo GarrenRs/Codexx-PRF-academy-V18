@@ -287,11 +287,11 @@
                 </a>
                 
                 <div class="nav-section-title">Communications</div>
-                <a href="{{ url_for('dashboard_messages', role='member') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('role') == 'member' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages', category='internal') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'internal' %}active{% endif %}">
                     <i class="fas fa-user-shield"></i>
                     <span>Member Messages</span>
                 </a>
-                <a href="{{ url_for('dashboard_messages', role='visitor') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('role') == 'visitor' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'portfolio' %}active{% endif %}">
                     <i class="fas fa-user-clock"></i>
                     <span>Visitor Inquiries</span>
                 </a>
@@ -330,11 +330,11 @@
                     <span>CRM</span>
                     {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-auto small opacity-50"></i>{% endif %}
                 </a>
-                <a href="{{ url_for('dashboard_messages', source='academy') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('source') == 'academy' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages', category='internal') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'internal' %}active{% endif %}">
                     <i class="fas fa-university"></i>
                     <span>Academy Inquiries</span>
                 </a>
-                <a href="{{ url_for('dashboard_messages', source='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('source') == 'portfolio' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'portfolio' %}active{% endif %}">
                     <i class="fas fa-briefcase"></i>
                     <span>Portfolio Messages</span>
                 </a>

@@ -6,37 +6,30 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
             <div class="card-header d-flex justify-content-between align-items-center py-3" style="background: rgba(0,0,0,0.2);">
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-envelope-open-text me-2 text-gold"></i>
-                    {% if request.args.get('source') == 'academy' %}
+                    {% if current_category == 'platform' %}
                         <span class="gold-text">Academy Inquiries</span>
                         <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Direct communication with Codexx Academy Admin</small>
-                    {% elif request.args.get('source') == 'portfolio' %}
+                    {% elif current_category == 'internal' %}
+                        <span class="gold-text">Internal Communications</span>
+                        <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Messages between members and administration</small>
+                    {% else %}
                         <span class="gold-text">Portfolio Messages</span>
                         <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Inquiries from visitors viewing your public portfolio</small>
-                    {% else %}
-                        <span class="gold-text">All Communications</span>
-                        <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Consolidated view of all incoming messages</small>
                     {% endif %}
                 </h5>
                 <div>
-                    {% if not is_admin %}
                     <div class="btn-group btn-group-sm me-2">
-                        <a href="{{ url_for('dashboard_messages', source='academy') }}" class="btn btn-outline-gold {% if request.args.get('source') == 'academy' %}active{% endif %}">Academy</a>
-                        <a href="{{ url_for('dashboard_messages', source='portfolio') }}" class="btn btn-outline-gold {% if request.args.get('source') == 'portfolio' %}active{% endif %}">Portfolio</a>
-                        <a href="{{ url_for('dashboard_messages') }}" class="btn btn-outline-gold {% if not request.args.get('source') %}active{% endif %}">All</a>
+                        {% if is_admin %}
+                        <a href="{{ url_for('dashboard_messages', category='platform') }}" class="btn btn-outline-gold {% if current_category == 'platform' %}active{% endif %}">Platform</a>
+                        {% endif %}
+                        <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="btn btn-outline-gold {% if current_category == 'portfolio' %}active{% endif %}">Portfolio</a>
+                        <a href="{{ url_for('dashboard_messages', category='internal') }}" class="btn btn-outline-gold {% if current_category == 'internal' %}active{% endif %}">Internal</a>
                     </div>
-                    {% endif %}
-                    {% if is_admin %}
-                    <div class="btn-group btn-group-sm me-2">
-                        <a href="{{ url_for('dashboard_messages', role='member') }}" class="btn btn-outline-gold {% if request.args.get('role') == 'member' %}active{% endif %}">Members</a>
-                        <a href="{{ url_for('dashboard_messages', role='visitor') }}" class="btn btn-outline-gold {% if request.args.get('role') == 'visitor' %}active{% endif %}">Visitors</a>
-                        <a href="{{ url_for('dashboard_messages') }}" class="btn btn-outline-gold {% if not request.args.get('role') %}active{% endif %}">All</a>
-                    </div>
-                    {% endif %}
-                    <select class="form-select form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;" onchange="window.location.href='{{ url_for('dashboard_messages', role=request.args.get('role', '')) }}&priority=' + this.value">
-                        <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All Priority</option>
-                        <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>🔴 High</option>
-                        <option value="normal" {% if priority_filter == 'normal' %}selected{% endif %}>🟡 Normal</option>
-                        <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>🟢 Low</option>
+                    <select class="form-select form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;" onchange="window.location.href='{{ url_for('dashboard_messages', category=current_category) }}&priority=' + this.value">
+                        <option value="all">All Priority</option>
+                        <option value="high">🔴 High</option>
+                        <option value="normal">🟡 Normal</option>
+                        <option value="low">🟢 Low</option>
                     </select>
                     <div class="badge bg-primary">{{ messages|length }} Messages</div>
                 </div>
@@ -138,10 +131,10 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                 </td>
                                 <td>
                                     <div class="d-flex flex-column gap-1">
-                                        {% if message.is_internal %}
-                                            <span class="badge bg-info-gradient text-black border-gold shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-reply-all"></i> ACADEMY THREAD</span>
-                                        {% elif message.is_db %}
+                                        {% if message.category == 'platform' %}
                                             <span class="badge bg-primary border-light shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-university"></i> ACADEMY INQUIRY</span>
+                                        {% elif message.category == 'internal' %}
+                                            <span class="badge bg-info-gradient text-black border-gold shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-reply-all"></i> INTERNAL COMMUNICATION</span>
                                         {% else %}
                                             <span class="badge bg-success border-light shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-briefcase"></i> PORTFOLIO DIRECT</span>
                                         {% endif %}
@@ -155,11 +148,6 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                         </div>
                                         <div>
                                             <strong class="text-dark d-block mb-0" style="font-size: 0.9rem;">{{ message.name }}</strong>
-                                            {% if message.sender_role == 'member' or message.sender_id %}
-                                                <span class="badge bg-gold-gradient text-black" style="font-size: 0.6rem; padding: 1px 4px;">MEMBER</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary" style="font-size: 0.6rem; padding: 1px 4px;">VISITOR</span>
-                                            {% endif %}
                                         </div>
                                     </div>
                                 </td>

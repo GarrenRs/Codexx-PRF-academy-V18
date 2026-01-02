@@ -1243,6 +1243,7 @@ def contact_academy():
                               email=email,
                               message=message_content,
                               is_internal=False,
+                              category='platform',
                               sender_id=user_id,
                               sender_role='member' if user_id else 'visitor',
                               created_at=datetime.utcnow())
@@ -1506,7 +1507,6 @@ def contact():
         # Find target user
         target_user = User.query.filter_by(username=portfolio_owner).first()
         
-        # 1. Save to Database (Reliable central storage)
         new_msg = Message(
             id=str(uuid.uuid4()),
             name=name,
@@ -1514,13 +1514,14 @@ def contact():
             message=message_content,
             is_internal=False,
             sender_role='visitor',
+            category='portfolio',
             receiver_id=target_user.id if target_user else None,
             created_at=datetime.utcnow()
         )
         db.session.add(new_msg)
         db.session.commit()
 
-        # 2. Sync to JSON for the user's isolated view (Legacy fallback)
+        # Update JSON only for portfolio owner view (Legacy)
         user_data = load_data(username=portfolio_owner)
         if 'messages' not in user_data: user_data['messages'] = []
         user_data['messages'].append({
@@ -1530,9 +1531,7 @@ def contact():
             'message': message_content,
             'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'read': False,
-            'request_type': request_type,
-            'interest_area': interest_area,
-            'priority': 'normal'
+            'category': 'portfolio'
         })
         save_data(user_data, username=portfolio_owner)
 
@@ -2528,136 +2527,51 @@ def dashboard_social():
 @login_required
 @disable_in_demo
 def dashboard_messages():
-    """List all messages for current user with priority filtering"""
+    """List all messages with separation logic"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-
-    # Load user's isolated data
-    data = load_data(username=username)
-    user_messages = data.get('messages', [])
-
-    all_messages = []
-
-    # Add user-specific messages from JSON
-    for msg in user_messages:
-        msg_copy = msg.copy()
-        msg_copy['is_db'] = False
-        all_messages.append(msg_copy)
-
-    # If admin, also fetch global messages from the database
-    if is_admin:
-        try:
-            # Filter by role if requested
-            role_filter = request.args.get('role')
-            source_filter = request.args.get('source')
-            query = Message.query.filter_by(parent_id=None)
-            
-            if role_filter == 'member':
-                query = query.filter(Message.sender_role == 'member')
-            elif role_filter == 'visitor':
-                query = query.filter(Message.sender_role == 'visitor')
-            
-            if source_filter == 'portfolio':
-                query = query.filter(Message.sender_role == 'visitor')
-            elif source_filter == 'academy':
-                query = query.filter(Message.sender_role != 'visitor')
-                
-            db_messages = query.order_by(Message.created_at.desc()).all()
-            for msg in db_messages:
-                all_messages.append({
-                    'id': str(msg.id),
-                    'name': msg.name,
-                    'email': msg.email,
-                    'message': msg.message,
-                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'read': msg.is_read,
-                    'request_type': 'Portfolio Message' if msg.sender_role == 'visitor' else 'Academy Inquiry',
-                    'interest_area': 'Direct' if msg.sender_role == 'visitor' else 'General',
-                    'priority': 'normal',
-                    'sender_role': msg.sender_role or ('member' if msg.sender_id else 'visitor'),
-                    'receiver_id': msg.receiver_id,
-                    'sender_id': msg.sender_id,
-                    'is_db': True
-                })
-        except Exception as e:
-            app.logger.error(f"Error fetching DB messages: {str(e)}")
-    else:
-        # For members, fetch messages from DB where they are the receiver
-        try:
-            member_messages = Message.query.filter_by(receiver_id=str(session.get('user_id'))).all()
-            for msg in member_messages:
-                # We only show threads in the main list, but for members receiving a reply, 
-                # they might need to see it. For simplicity, let's add them to the list.
-                all_messages.append({
-                    'id': str(msg.id),
-                    'parent_id': msg.parent_id,
-                    'name': msg.name,
-                    'email': msg.email,
-                    'message': msg.message,
-                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'read': msg.is_read,
-                    'request_type': 'Portfolio Message' if msg.sender_role == 'visitor' else 'Academy Reply',
-                    'interest_area': 'Direct',
-                    'priority': 'normal',
-                    'sender_role': msg.sender_role,
-                    'receiver_id': msg.receiver_id,
-                    'sender_id': msg.sender_id,
-                    'is_db': True
-                })
-        except Exception as e:
-            app.logger.error(f"Error fetching member DB messages: {str(e)}")
-
-    # Source filtering for ALL roles
-    source_filter = request.args.get('source')
-    if source_filter:
-        if source_filter == 'academy':
-            messages = [m for m in all_messages if m.get('request_type') in ['Academy Inquiry', 'Academy Reply']]
-        elif source_filter == 'portfolio':
-            messages = [m for m in all_messages if m.get('request_type') == 'Portfolio Message']
-        else:
-            messages = all_messages
-    else:
-        messages = all_messages
-
-    # Get priority filter from query parameter
-    priority_filter = request.args.get('priority', 'all')
-
-    # Filter by priority if specified
-    if priority_filter != 'all':
-        messages = [
-            m for m in messages
-            if m.get('priority', 'normal') == priority_filter
-        ]
-
-    # Identify replies and remove them from main list if we want to show threads
-    # BUT: For users, if the message IS a reply to them, they should probably see it if the parent isn't there
-    thread_messages = []
-    for m in messages:
-        if not m.get('parent_id'):
-            thread_messages.append(m)
-        elif not is_admin and m.get('receiver_id') == str(session.get('user_id')):
-            # If it's a reply sent TO the user, and we are not admin, show it if the parent is not in their JSON
-            # This handles the case where admin replies to a DB inquiry
-            thread_messages.append(m)
+    user_id = str(session.get('user_id'))
     
-    # Calculate priority counts for dashboard
-    priority_stats = {
-        'high':
-        len([m for m in all_messages if m.get('priority') == 'high']),
-        'normal':
-        len([
-            m for m in all_messages if m.get('priority', 'normal') == 'normal'
-        ]),
-        'low':
-        len([m for m in all_messages if m.get('priority') == 'low']),
-        'total':
-        len(all_messages)
-    }
+    # Filter by category
+    category = request.args.get('category', 'portfolio')
+    
+    all_messages = []
+    
+    try:
+        if is_admin:
+            # Admin sees platform messages or portfolio messages directed to 'admin'
+            if category == 'platform':
+                db_messages = Message.query.filter_by(category='platform', parent_id=None).order_by(Message.created_at.desc()).all()
+            elif category == 'internal':
+                db_messages = Message.query.filter_by(category='internal', parent_id=None).order_by(Message.created_at.desc()).all()
+            else: # portfolio
+                db_messages = Message.query.filter_by(category='portfolio', parent_id=None, receiver_id=user_id).order_by(Message.created_at.desc()).all()
+        else:
+            # Regular user only sees messages belonging to their portfolio category or internal
+            if category == 'internal':
+                 db_messages = Message.query.filter_by(category='internal', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()
+            else: # portfolio
+                 db_messages = Message.query.filter_by(category='portfolio', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()
 
-    return render_template('dashboard/messages.html',
-                           messages=thread_messages,
-                           priority_filter=priority_filter,
-                           priority_stats=priority_stats)
+        for msg in db_messages:
+            all_messages.append({
+                'id': str(msg.id),
+                'name': msg.name,
+                'email': msg.email,
+                'message': msg.message,
+                'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'read': msg.is_read,
+                'category': msg.category,
+                'is_db': True
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Error fetching messages: {str(e)}")
+
+    # Sort messages by date to ensure proper ordering
+    all_messages.sort(key=lambda x: x['date'], reverse=True)
+
+    return render_template('dashboard/messages.html', messages=all_messages, current_category=category)
 
 
 @app.route('/dashboard/messages/view/<message_id>')
