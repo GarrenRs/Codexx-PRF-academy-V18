@@ -103,9 +103,15 @@
                     <h5 class="gold-text mb-4">Internal Thread</h5>
                     <div class="reply-container mb-4">
                         {% for reply in replies %}
-                        <div class="glass-panel p-3 mb-3 border-start {% if reply.sender_id == 'admin' %}border-gold{% else %}border-secondary{% endif %}" style="border-left-width: 4px !important;">
+                        <div class="glass-panel p-3 mb-3 border-start {% if reply.sender_role == 'admin' %}border-gold{% else %}border-secondary{% endif %}" style="border-left-width: 4px !important;">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <strong class="{% if reply.sender_id == 'admin' %}gold-text{% endif %}">{{ reply.name }}</strong>
+                                <strong class="{% if reply.sender_role == 'admin' %}gold-text{% endif %}">
+                                    {% if reply.sender_role == 'admin' %}
+                                        Admin
+                                    {% else %}
+                                        User
+                                    {% endif %}
+                                </strong>
                                 <small class="text-muted">{{ reply.date }}</small>
                             </div>
                             <p class="mb-0 text-white opacity-75">{{ reply.message }}</p>
@@ -113,11 +119,14 @@
                         {% endfor %}
                     </div>
 
-                    {% if message.sender_role == 'member' or message.sender_id %}
+                    {% if is_internal_system or message.sender_role == 'member' or message.sender_id %}
                     <form action="{{ url_for('dashboard_reply_message', message_id=message.id) }}" method="POST" class="glass-panel p-4">
+                        {% if is_internal_system %}
+                        <input type="hidden" name="category" value="internal">
+                        {% endif %}
                         <div class="mb-3">
                             <label class="form-label text-white fw-bold">Send Internal Reply</label>
-                            <textarea name="reply_content" class="form-control bg-dark border-secondary text-white" rows="3" placeholder="Type your message to the user here..."></textarea>
+                            <textarea name="reply_content" class="form-control bg-dark border-secondary text-white" rows="3" placeholder="Type your message to the member here..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-gold-gradient w-100 fw-bold">
                             <i class="fas fa-paper-plane me-2"></i>Send Internal Message
@@ -192,7 +201,7 @@
                         <i class="fas fa-user-plus me-2"></i>Register User
                     </a>
                     {% else %}
-                    <a href="{{ url_for('dashboard_convert_message_to_client', message_id=message.id) }}" 
+                    <a href="{{ url_for('dashboard_add_client', prefill_msg_id=message.id) }}" 
                        class="btn btn-success"
                        onclick="return confirm('Convert this message to a client? This will create a new client entry.')">
                         <i class="fas fa-user-plus me-2"></i>Convert to Client

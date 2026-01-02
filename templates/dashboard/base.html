@@ -35,6 +35,7 @@
             transition: var(--transition);
             font-weight: 600 !important;
             letter-spacing: 0.5px;
+            color: #D4AF37 !important;
         }
 
         .custom-btn-glow:hover {
@@ -42,6 +43,45 @@
             color: #000 !important;
             box-shadow: 0 0 15px rgba(212, 175, 55, 0.4) !important;
             transform: translateY(-2px);
+        }
+
+        /* Improved Button Visibility on Dark Backgrounds */
+        .btn-outline-gold {
+            color: #D4AF37 !important;
+            border-color: #D4AF37 !important;
+        }
+        .btn-outline-gold:hover {
+            background-color: #D4AF37 !important;
+            color: #000 !important;
+        }
+        .btn-gold-gradient {
+            background: var(--gold-gradient) !important;
+            color: #000 !important;
+            border: none !important;
+            font-weight: 600 !important;
+        }
+        .btn-gold-gradient:hover {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5) !important;
+            transform: translateY(-1px);
+        }
+        .btn-outline-secondary {
+            color: #aaa !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .btn-outline-secondary:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+        }
+        .nav-link.text-danger {
+            color: #ff4d4d !important;
+            font-weight: 600 !important;
+        }
+        .nav-link.text-danger:hover {
+            background: rgba(255, 77, 77, 0.1) !important;
+        }
+        .gold-text {
+            color: #D4AF37 !important;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.2);
         }
 
         body {
@@ -294,6 +334,10 @@
                     <i class="fas fa-envelope-open-text"></i>
                     <span>Inbox</span>
                 </a>
+                <a href="{{ url_for('dashboard_internal_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_internal_messages' %}active{% endif %}">
+                    <i class="fas fa-comments text-info"></i>
+                    <span class="text-info">Internal messages</span>
+                </a>
                 {% else %}
                 <div class="nav-section-title">Portfolio Builder</div>
                 <a href="{{ url_for('dashboard_general') }}" class="nav-link {% if request.endpoint == 'dashboard_general' %}active{% endif %}">
@@ -326,6 +370,10 @@
                 <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-envelope-open-text"></i>
                     <span>Inbox</span>
+                </a>
+                <a href="{{ url_for('dashboard_internal_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_internal_messages' %}active{% endif %}">
+                    <i class="fas fa-comments text-info"></i>
+                    <span class="text-info">Internal messages</span>
                 </a>
                 <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
                     <i class="fas fa-hashtag"></i>

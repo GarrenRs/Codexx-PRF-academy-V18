@@ -43,40 +43,27 @@
     "theme": "luxury-gold"
   },
   "clients": [],
-  "portfolios": {
-    "admin": {
-      "name": "admin",
-      "title": "Web Developer & Designer",
-      "description": "Welcome to my professional portfolio.",
-      "skills": [],
-      "projects": [],
-      "messages": [],
-      "clients": [
-        {
-          "id": 1,
-          "name": "GarrenSY",
-          "email": "raesonrs@gmail.com",
-          "phone": "",
-          "company": "",
-          "project_title": "Inquiry from GarrenSY",
-          "project_description": "Hi am visitor landing page",
-          "status": "lead",
-          "price": "",
-          "deadline": "",
-          "start_date": "2026-01-02",
-          "notes": "",
-          "created_at": "2026-01-02 16:12:22"
-        }
-      ],
-      "settings": {
-        "theme": "luxury-gold"
-      },
-      "visitors": {
-        "total": 0,
-        "today": [],
-        "unique_ips": []
-      }
+  "users": [
+    {
+      "id": 1,
+      "username": "Codexx",
+      "password_hash": "scrypt:32768:8:1$S4eXMZsW4guDMrM4$816fe1afe638f09c7983124f931ebdb98a4fc3a4aa637619f7396bc932327fa1ae35541df8413e91cdf9633e5f34a8e5aceffecd21df349e70aa198fc1e879ed",
+      "email": "sarah@example.com",
+      "role": "user",
+      "is_demo": false,
+      "created_at": "2026-01-02 21:09:10"
     },
+    {
+      "id": 2,
+      "username": "Raeson",
+      "password_hash": "scrypt:32768:8:1$djU2aqmeIZQJH2uB$e0915c34b27facdeb56d0c91f021f2bf8d483568d751191345fa122af33747d6897391eb2c460b4c225766360d6c997a8c46be7c810e70a1547028a4974c96d1",
+      "email": "sarah@example.com",
+      "role": "user",
+      "is_demo": true,
+      "created_at": "2026-01-02 21:17:22"
+    }
+  ],
+  "portfolios": {
     "Codexx": {
       "username": "Codexx",
       "name": "",
@@ -86,17 +73,7 @@
       "photo": "",
       "skills": [],
       "projects": [],
-      "messages": [
-        {
-          "id": "5ddb03df-50c8-4fea-a883-126e25538764",
-          "name": "GarrenSY",
-          "email": "Raesonrs@gmail.com",
-          "message": "Hi How are you ",
-          "date": "2026-01-02 16:16:29",
-          "read": false,
-          "category": "portfolio"
-        }
-      ],
+      "messages": [],
       "clients": [],
       "contact": {
         "email": "",
@@ -112,57 +89,40 @@
         "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 4,
-        "today": [
-          {
-            "ip": "105.235.133.236, 10.83.8.81",
-            "timestamp": "2026-01-02 16:15:54",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.133.236, 10.83.7.65",
-            "timestamp": "2026-01-02 16:16:01",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.133.236, 10.83.7.65",
-            "timestamp": "2026-01-02 16:16:29",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.133.236, 10.83.9.198",
-            "timestamp": "2026-01-02 19:12:03",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.133.236, 10.83.5.121",
-            "timestamp": "2026-01-02 19:51:21",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.133.236, 10.83.8.81",
-            "timestamp": "2026-01-02 19:51:27",
-            "date": "2026-01-02"
-          }
-        ],
-        "unique_ips": [
-          "105.235.133.236, 10.83.7.65",
-          "105.235.133.236, 10.83.9.198",
-          "105.235.133.236, 10.83.8.81",
-          "105.235.133.236, 10.83.5.121"
-        ]
+        "total": 0,
+        "today": [],
+        "unique_ips": []
+      }
+    },
+    "Raeson": {
+      "username": "Raeson",
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "",
+      "skills": [],
+      "projects": [],
+      "messages": [],
+      "clients": [],
+      "contact": {
+        "email": "",
+        "phone": "",
+        "location": ""
+      },
+      "social": {
+        "linkedin": "",
+        "github": "",
+        "twitter": ""
+      },
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "visitors": {
+        "total": 0,
+        "today": [],
+        "unique_ips": []
       }
     }
-  },
-  "users": [
-    {
-      "id": 1,
-      "username": "Codexx",
-      "password_hash": "scrypt:32768:8:1$7KFnlZYDKv3Ij1vK$2fbabd2adc3a9e624caa29fd1056948dcb4732b98dd488cafe3892e8948d0eadafd118e7f1401683359e5bab5cc8d1f6e34f7252d285d57f40f6a7ca91d764c9",
-      "email": "Raesondark@gmail.com",
-      "role": "user",
-      "is_demo": true,
-      "created_at": "2026-01-02 16:14:09"
-    }
-  ]
+  }
 }

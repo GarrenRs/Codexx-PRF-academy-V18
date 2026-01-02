@@ -1,0 +1,84 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Internal Messages - Dashboard{% endblock %}
+
+{% block page_title %}Internal Communications{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-dark border-gold-opacity shadow-lg">
+            <div class="card-header border-bottom border-gold-opacity py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold gold-text">
+                    <i class="fas fa-comments me-2"></i>Internal Chat
+                </h5>
+                <div class="d-flex align-items-center gap-3">
+                    {% if not session.get('is_admin') %}
+                    <a href="{{ url_for('dashboard_internal_compose', receiver_id='admin') }}" class="btn btn-sm btn-gold-gradient fw-bold px-3 shadow-sm">
+                        <i class="fas fa-paper-plane me-1"></i> Contact Admin
+                    </a>
+                    {% endif %}
+                    <div class="badge bg-gold text-black px-3">{{ messages|length }} Messages</div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead class="bg-black text-gold">
+                            <tr>
+                                <th class="border-0 py-3 ps-4">Member</th>
+                                <th class="border-0 py-3">Last Message</th>
+                                <th class="border-0 py-3">Date</th>
+                                <th class="border-0 py-3 text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in messages %}
+                            <tr class="{% if not message.read %}bg-gold-opacity-5{% endif %}">
+                                <td class="py-3 ps-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar-sm bg-gold-gradient rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-black"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-white">{{ message.name }}</h6>
+                                            <small class="text-muted">{{ message.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <p class="mb-0 text-white-50 text-truncate" style="max-width: 300px;">
+                                        {{ message.message }}
+                                    </p>
+                                </td>
+                                <td class="py-3">
+                                    <small class="text-muted">{{ message.date }}</small>
+                                </td>
+                                <td class="py-3 text-end pe-4">
+                                    <a href="{{ url_for('dashboard_internal_view', message_id=message.id) }}" class="btn btn-sm btn-outline-gold custom-btn-glow px-3">
+                                        <i class="fas fa-paper-plane me-1"></i> Open Thread
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fas fa-comment-slash fa-3x mb-3 opacity-25"></i>
+                                    <h5>No Internal Messages</h5>
+                                    <p>Start a conversation with another academy member.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gold-opacity-5 { background: rgba(212, 175, 55, 0.05); }
+    .border-gold-opacity { border-color: rgba(212, 175, 55, 0.1) !important; }
+</style>
+{% endblock %}

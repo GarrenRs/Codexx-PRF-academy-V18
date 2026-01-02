@@ -1166,82 +1166,93 @@ def dashboard_chat(user_id=None):
 @login_required
 @disable_in_demo
 def dashboard_reply_message(message_id):
-    """Admin reply to a user message internally"""
+    """Reply to a message internally (member-to-member or admin-to-visitor)"""
+    user_id = str(session.get('user_id'))
+    username = session.get('username')
     is_admin = session.get('is_admin')
-    if not is_admin:
-        flash('Unauthorized access.', 'danger')
-        return redirect(url_for('dashboard_messages'))
-
+    
     content = request.form.get('reply_content')
+    category = request.form.get('category', 'portfolio') # Default to portfolio if not specified
+    
     if not content:
         flash('Reply content cannot be empty.', 'danger')
+        if category == 'internal':
+            return redirect(url_for('dashboard_internal_view', message_id=message_id))
         return redirect(url_for('dashboard_view_message', message_id=message_id))
 
-    # Load data to find the original message
-    data = load_data()
-    all_messages = []
-    
-    # Check all possible sources for the original message
-    # 1. Check database first (for Academy Inquiries)
-    db_msg = Message.query.get(message_id)
-    if db_msg:
-        # Save reply to database
-        new_reply = Message(
-            id=str(uuid.uuid4()),
-            parent_id=str(message_id),
-            name='Codexx Admin',
-            email='admin@codexx.academy',
-            message=content,
-            is_internal=True,
-            sender_id='admin',
-            sender_role='admin',
-            receiver_id=db_msg.sender_id,
-            created_at=datetime.utcnow()
-        )
-        db.session.add(new_reply)
-        db.session.commit()
+    try:
+        # Check database first
+        db_msg = Message.query.get(message_id)
+        if db_msg:
+            # For internal system, sender is current user, receiver is the other participant
+            receiver_id = db_msg.sender_id if db_msg.sender_id != user_id else db_msg.receiver_id
+            
+            new_reply = Message(
+                id=str(uuid.uuid4()),
+                parent_id=str(message_id),
+                name='Admin' if is_admin else username,
+                email='admin@codexx.academy' if is_admin else session.get('email', ''),
+                message=content,
+                is_internal=True,
+                sender_id=user_id,
+                sender_role='admin' if is_admin else 'member',
+                receiver_id=receiver_id,
+                category=category,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(new_reply)
+            db.session.commit()
+            flash('Reply sent successfully.', 'success')
+            
+            if category == 'internal':
+                return redirect(url_for('dashboard_internal_view', message_id=message_id))
+            return redirect(url_for('dashboard_view_message', message_id=message_id))
+
+        # Check JSON data (Legacy Fallback)
+        users_to_check = [username, 'admin']
+        target_user = None
+        original_msg = None
+        
+        for user in users_to_check:
+            if not user: continue
+            user_data = load_data(username=user)
+            messages = user_data.get('messages', [])
+            original_msg = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
+            if original_msg:
+                target_user = user
+                break
+
+        if not original_msg:
+            flash('Original message not found.', 'danger')
+            return redirect(url_for('dashboard_messages'))
+
+        # Create a new reply message in JSON
+        new_reply = {
+            'id': str(uuid.uuid4()),
+            'parent_id': str(message_id),
+            'name': 'Codexx Admin' if is_admin else username,
+            'email': 'admin@codexx.academy' if is_admin else session.get('email', ''),
+            'message': content,
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'read': False,
+            'sender_id': user_id,
+            'category': category
+        }
+        
+        user_data = load_data(username=target_user)
+        if 'messages' not in user_data: user_data['messages'] = []
+        user_data['messages'].append(new_reply)
+        save_data(user_data, username=target_user)
+        
         flash('Reply sent successfully.', 'success')
-        return redirect(url_for('dashboard_view_message', message_id=message_id))
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Reply error: {str(e)}")
+        flash('System error.', 'danger')
 
-    # 2. Check JSON data (for Portfolio Messages)
-    # We need to find which user's data contains this message
-    # For now, let's check current user and admin
-    users_to_check = [session.get('username'), 'admin']
-    target_user = None
-    original_msg = None
-    
-    for user in users_to_check:
-        if not user: continue
-        user_data = load_data(username=user)
-        messages = user_data.get('messages', [])
-        original_msg = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
-        if original_msg:
-            target_user = user
-            break
-
-    if not original_msg:
-        flash('Original message not found.', 'danger')
-        return redirect(url_for('dashboard_messages'))
-
-    # Create a new reply message in JSON
-    new_reply = {
-        'id': str(uuid.uuid4()),
-        'parent_id': str(message_id),
-        'name': 'Codexx Admin',
-        'email': 'admin@codexx.academy',
-        'message': content,
-        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'read': False,
-        'is_internal': True,
-        'sender_id': 'admin',
-        'receiver_id': original_msg.get('sender_id'),
-        'type': 'reply'
-    }
-
-    user_data = load_data(username=target_user)
-    if 'messages' not in user_data:
-        user_data['messages'] = []
-    
+    if category == 'internal':
+        return redirect(url_for('dashboard_internal_view', message_id=message_id))
+    return redirect(url_for('dashboard_view_message', message_id=message_id))
     user_data['messages'].append(new_reply)
     save_data(user_data, username=target_user)
 
@@ -1563,12 +1574,22 @@ def contact():
             # PORTFOLIO CONTACT (User Inbox)
             target_user = User.query.filter_by(username=portfolio_owner).first()
             if not target_user:
-                flash('Portfolio owner not found.', 'danger')
-                return redirect(request.referrer or url_for('index'))
+                # Fallback: check if user exists in JSON data if not in DB
+                all_data = load_data()
+                users_list = all_data.get('users', [])
+                json_user = next((u for u in users_list if u.get('username') == portfolio_owner), None)
                 
-            category = 'portfolio'
-            target_id = str(target_user.id)
-            workspace_id = target_user.workspace_id
+                if json_user:
+                    category = 'portfolio'
+                    target_id = str(json_user.get('id'))
+                    workspace_id = None
+                else:
+                    flash('Portfolio owner not found.', 'danger')
+                    return redirect(request.referrer or url_for('index'))
+            else:
+                category = 'portfolio'
+                target_id = str(target_user.id)
+                workspace_id = target_user.workspace_id
             
             # Aggregate portfolio form fields into message body
             enhanced_msg = f"Request Type: {request_type}\n"
@@ -2648,10 +2669,155 @@ def dashboard_messages():
     except Exception as e:
         app.logger.error(f"Error fetching messages: {str(e)}")
 
+    # Legacy / JSON Fallback for regular users (if not in DB)
+    if not is_admin:
+        json_data = load_data(username=username)
+        json_messages = json_data.get('messages', [])
+        for j_msg in json_messages:
+            # Avoid duplicates if already added from DB
+            if not any(str(m.get('id')) == str(j_msg.get('id')) for m in all_messages):
+                all_messages.append({
+                    'id': str(j_msg.get('id')),
+                    'name': j_msg.get('name'),
+                    'email': j_msg.get('email'),
+                    'message': j_msg.get('message'),
+                    'date': j_msg.get('date'),
+                    'read': j_msg.get('read', False),
+                    'category': j_msg.get('category', 'portfolio'),
+                    'is_db': False
+                })
+
     # Sort messages by date to ensure proper ordering
     all_messages.sort(key=lambda x: x['date'], reverse=True)
 
+    # Filtering logic for all_messages based on category
+    if category != 'all':
+        all_messages = [m for m in all_messages if m.get('category') == category]
+
     return render_template('dashboard/messages.html', messages=all_messages, current_category=category)
+
+
+@app.route('/dashboard/messages/internal')
+@login_required
+@disable_in_demo
+def dashboard_internal_messages():
+    """List all internal (member-to-member) messages"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    user_id = str(session.get('user_id'))
+    
+    all_messages = []
+    
+    try:
+        # Fetch internal messages from DB
+        db_messages = Message.query.filter_by(category='internal', parent_id=None).order_by(Message.created_at.desc()).all()
+        
+        # If not admin, filter to only those where user is sender or receiver
+        if not is_admin:
+            db_messages = [msg for msg in db_messages if msg.receiver_id == user_id or msg.sender_id == user_id]
+            
+        for msg in db_messages:
+            all_messages.append({
+                'id': str(msg.id),
+                'name': msg.name,
+                'email': msg.email,
+                'message': msg.message,
+                'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'read': msg.is_read,
+                'category': msg.category
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Error fetching internal messages: {str(e)}")
+
+    return render_template('dashboard/internal_messages.html', messages=all_messages)
+
+
+@app.route('/dashboard/messages/internal/compose')
+@app.route('/dashboard/messages/internal/compose/<receiver_id>')
+@login_required
+@disable_in_demo
+def dashboard_internal_compose(receiver_id=None):
+    """View for composing a new internal message"""
+    receiver = None
+    if receiver_id and receiver_id != 'admin':
+        receiver = User.query.get(receiver_id)
+        
+    return render_template('dashboard/internal_compose.html', receiver=receiver)
+
+
+@app.route('/dashboard/messages/internal/send', methods=['POST'])
+@login_required
+@disable_in_demo
+def dashboard_internal_send():
+    """Process sending a new internal message"""
+    user_id = str(session.get('user_id'))
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    receiver_id = request.form.get('receiver_id')
+    message_content = request.form.get('message')
+    
+    if not message_content:
+        flash('Message content cannot be empty.', 'danger')
+        return redirect(url_for('dashboard_internal_compose', receiver_id=receiver_id))
+
+    try:
+        new_msg = Message(
+            id=str(uuid.uuid4()),
+            name='Admin' if is_admin else username,
+            email='admin@codexx.academy' if is_admin else session.get('email', ''),
+            message=message_content,
+            is_internal=True,
+            sender_id=user_id,
+            sender_role='admin' if is_admin else 'member',
+            receiver_id=receiver_id,
+            category='internal',
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+        flash('Message sent successfully.', 'success')
+        return redirect(url_for('dashboard_internal_messages'))
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error sending internal message: {str(e)}")
+        flash('System error.', 'danger')
+        return redirect(url_for('dashboard_internal_messages'))
+
+
+@app.route('/dashboard/messages/internal/view/<message_id>')
+@login_required
+@disable_in_demo
+def dashboard_internal_view(message_id):
+    """View internal message thread"""
+    is_admin = session.get('is_admin')
+    user_id = str(session.get('user_id'))
+    
+    try:
+        message = Message.query.get(message_id)
+        if not message:
+            flash('Message not found.', 'danger')
+            return redirect(url_for('dashboard_internal_messages'))
+            
+        # Security check: must be admin OR participant
+        if not is_admin and message.receiver_id != user_id and message.sender_id != user_id:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('dashboard_internal_messages'))
+            
+        # Mark as read if receiver is viewing
+        if message.receiver_id == user_id and not message.is_read:
+            message.is_read = True
+            db.session.commit()
+            
+        # Get replies (thread)
+        replies = Message.query.filter_by(parent_id=str(message_id)).order_by(Message.created_at.asc()).all()
+        
+        return render_template('dashboard/view_message.html', message=message, replies=replies, is_internal_system=True)
+    except Exception as e:
+        app.logger.error(f"Error viewing internal message: {str(e)}")
+        flash('System error.', 'danger')
+        return redirect(url_for('dashboard_internal_messages'))
 
 
 @app.route('/dashboard/messages/view/<message_id>')
@@ -2863,6 +3029,37 @@ def dashboard_clients():
 def dashboard_add_client():
     """Add new client for current user"""
     username = session.get('username')
+    prefill = None
+    
+    # Handle prefill from message
+    prefill_msg_id = request.args.get('prefill_msg_id')
+    if prefill_msg_id:
+        is_admin = session.get('is_admin')
+        message = None
+        
+        # Check admin DB messages
+        if is_admin:
+            try:
+                db_msg = Message.query.get(prefill_msg_id)
+                if db_msg:
+                    message = {
+                        'name': db_msg.name,
+                        'email': db_msg.email,
+                        'company': getattr(db_msg, 'company', ''),
+                        'message': db_msg.message
+                    }
+            except:
+                pass
+        
+        # Fallback to JSON
+        if not message:
+            data = load_data(username=username)
+            message = next((m for m in data.get('messages', [])
+                            if str(m.get('id')) == str(prefill_msg_id)), None)
+        
+        if message:
+            prefill = message
+
     if request.method == 'POST':
         data = load_data(username=username)
 
@@ -2919,7 +3116,7 @@ def dashboard_add_client():
         flash('Client added successfully', 'success')
         return redirect(url_for('dashboard_clients'))
 
-    return render_template('dashboard/add_client.html')
+    return render_template('dashboard/add_client.html', prefill=prefill)
 
 
 @app.route('/dashboard/clients/edit/<int:client_id>', methods=['GET', 'POST'])

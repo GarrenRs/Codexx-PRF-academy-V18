@@ -22,18 +22,18 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">Client Name *</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ prefill.name if prefill else '' }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="company" class="form-label">Company Name</label>
-                            <input type="text" class="form-control" id="company" name="company">
+                            <input type="text" class="form-control" id="company" name="company" value="{{ prefill.company if prefill else '' }}">
                         </div>
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="email" class="form-label">Email Address *</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ prefill.email if prefill else '' }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="phone" class="form-label">Phone Number</label>
@@ -53,7 +53,7 @@
                     <div class="mb-3">
                         <label for="project_description" class="form-label">Project Description</label>
                         <textarea class="form-control" id="project_description" name="project_description" rows="4" 
-                                  placeholder="Describe the project requirements, features, and objectives..."></textarea>
+                                  placeholder="Describe the project requirements, features, and objectives...">{{ prefill.message if prefill else '' }}</textarea>
                     </div>
                     
                     <div class="row">

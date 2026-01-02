@@ -38,3 +38,15 @@ requests
 apscheduler
 python-dotenv
 requests
+apscheduler
+email-validator
+flask
+flask-dance
+flask-login
+flask-sqlalchemy
+oauthlib
+psycopg2-binary
+pyjwt
+requests
+weasyprint
+werkzeug

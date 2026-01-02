@@ -108,6 +108,9 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                 {% set is_participant = True %}
                             {% elif message.receiver_id|string == session.get('user_id')|string or message.sender_id|string == session.get('user_id')|string %}
                                 {% set is_participant = True %}
+                            {# Fallback for messages from JSON that don't have receiver_id stored in the flattened dict #}
+                            {% elif not message.is_db %}
+                                {% set is_participant = True %}
                             {% endif %}
                             
                             {% if is_participant %}
