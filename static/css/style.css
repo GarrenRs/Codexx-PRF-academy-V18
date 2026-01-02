@@ -1438,3 +1438,67 @@ html {
         padding: 40px 0;
     }
 }
+
+.hero-image-wrapper {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    margin: 0 auto;
+}
+
+.hero-image-wrapper img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Verified Badge Styles */
+.verified-badge-floating {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #B8941F 100%);
+    color: #000;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 10;
+    border: 2px solid #fff;
+    animation: badge-pulse 2s infinite;
+}
+
+.verified-badge-card {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--gold-gradient);
+    color: #000;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    z-index: 5;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+@keyframes badge-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+}
+
+/* Verified Badge Logic Improvements */
+.verified-badge-floating {
+    display: none; /* Default hidden unless is_verified is true */
+}
+
+.portfolio-card[style*="border: 1.5px solid var(--primary-gold)"] .verified-badge-card {
+    display: flex !important;
+}

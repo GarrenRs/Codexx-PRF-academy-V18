@@ -353,16 +353,9 @@
                     {# Only show non-demo users (verified) and skip admin #}
                     {% if username != 'admin' %}
                     
-                    {% set is_verified_professional = False %}
-                    {% for user in data.users if user.username == username %}
-                        {% if user.is_verified %}
-                            {% set is_verified_professional = True %}
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if is_verified_professional %}
+                    {% if portfolio.is_verified %}
                     <div class="col-md-4">
-                        <div class="portfolio-card" style="border: 1.5px solid var(--primary-gold); box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);">
+                        <div class="portfolio-card" style="border: 1.5px solid var(--primary-gold); box-shadow: 0 0 20px rgba(212, 175, 55, 0.15); position: relative;">
                             {% if portfolio.photo %}
                                 <img src="{{ url_for('static', filename=portfolio.photo.replace('static/', '')) }}" alt="{{ portfolio.name }}" class="profile-img">
                             {% else %}
@@ -370,7 +363,12 @@
                                     <i class="fas fa-user-tie fa-3x gold-text"></i>
                                 </div>
                             {% endif %}
-                            <h3 class="h4 mb-1 text-white">{{ portfolio.name or username }} <span class="verified-badge" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;"><i class="fas fa-shield-alt me-1"></i> Verified Professional</span></h3>
+                            
+                            <div class="verified-badge-card" title="Verified Professional">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+
+                            <h3 class="h4 mb-1 text-white">{{ portfolio.name or username }}</h3>
                             <span class="type-badge">{{ portfolio.title or 'Active Builder' }}</span>
                             <p class="text-secondary small mb-4">
                                 {{ (portfolio.description or portfolio.about or 'Verified member of Codexx Academy.') | truncate(100) }}

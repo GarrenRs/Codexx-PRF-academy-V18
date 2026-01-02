@@ -105,6 +105,16 @@
             {% for username, info in portfolios.items() %}
             {% set portfolio = info.data %}
             {% set status = info.status %}
+            
+            {% set is_verified_professional = False %}
+            {% for u in users_list if u.username == username %}
+                {% if u.is_verified %}
+                    {% set is_verified_professional = True %}
+                {% endif %}
+            {% endfor %}
+
+            {# Only show verified professionals in the public catalog or if specifically verified #}
+            {% if is_verified_professional or status == 'verified' %}
             <div class="col-md-6 col-lg-4">
                 <div class="catalog-card h-100 p-4 d-flex flex-column text-center">
                     <div class="mb-4 position-relative">
@@ -115,21 +125,10 @@
                         {% endif %}
                         
                         <div class="position-absolute top-0 end-0">
-                            {% set is_verified_professional = False %}
-                            {% for u in users_list if u.username == username %}
-                                {% if u.is_verified %}
-                                    {% set is_verified_professional = True %}
-                                {% endif %}
-                            {% endfor %}
-                            
                             {% if is_verified_professional %}
                                 <span class="badge bg-success shadow-sm" title="Verified Professional"><i class="fas fa-shield-alt"></i> Verified Professional</span>
                             {% elif status == 'verified' %}
                                 <span class="badge bg-success shadow-sm" title="Verified - Full Access"><i class="fas fa-check-double"></i> Verified</span>
-                            {% elif status == 'in-progress' %}
-                                <span class="badge bg-info text-dark shadow-sm" title="Under Construction"><i class="fas fa-tools"></i> Building</span>
-                            {% else %}
-                                <span class="badge bg-secondary shadow-sm" title="New Account"><i class="fas fa-star"></i> New</span>
                             {% endif %}
                         </div>
                     </div>
@@ -152,6 +151,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             {% else %}
             <div class="col-12 text-center py-5">
                 <i class="fas fa-folder-open display-1 gold-text opacity-25 mb-4"></i>

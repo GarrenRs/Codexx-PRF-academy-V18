@@ -97,10 +97,16 @@
                     </div>
                 </div>
                 <div class="col-lg-6 text-center">
-                    <div class="hero-image-wrapper position-relative d-inline-block mt-5 mt-lg-0">
-                        <div class="hero-image-blob"></div>
-                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Profile" class="img-fluid rounded-circle shadow-2-strong position-relative z-index-1" style="width: 400px; height: 400px; object-fit: cover; border: 8px solid rgba(212, 175, 55, 0.1);">
-                    </div>
+                        <div class="hero-image-wrapper position-relative d-inline-block mt-5 mt-lg-0">
+                            <div class="hero-image-blob"></div>
+                            <img src="{{ url_for('static', filename=data.photo.replace('static/', '')) if data.photo and data.photo.startswith('static/') else (data.photo or url_for('static', filename='assets/profile-placeholder.svg')) }}" alt="Profile" class="img-fluid rounded-circle shadow-2-strong position-relative z-index-1" style="width: 400px; height: 400px; object-fit: cover; border: 8px solid rgba(212, 175, 55, 0.1);">
+                            
+                            {% if data.is_verified %}
+                            <div class="verified-badge-floating shadow-lg" title="Verified Professional" style="display: flex !important;">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            {% endif %}
+                        </div>
                 </div>
             </div>
         </div>
@@ -123,7 +129,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-4 mb-lg-0">
                     <div class="about-image">
-                        <img src="{{ data.photo or url_for('static', filename='assets/profile-placeholder.svg') }}" alt="Professional Profile" class="img-fluid rounded shadow">
+                        <img src="{{ url_for('static', filename=data.photo.replace('static/', '')) if data.photo and data.photo.startswith('static/') else (data.photo or url_for('static', filename='assets/profile-placeholder.svg')) }}" alt="Professional Profile" class="img-fluid rounded shadow">
                     </div>
                 </div>
                 <div class="col-lg-6">

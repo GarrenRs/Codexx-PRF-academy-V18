@@ -374,13 +374,21 @@ def user_portfolio(username):
     # Check if user exists in main data
     all_data = load_data()
     users = all_data.get('users', [])
-    if not any(u['username'] == username
-               for u in users) and username != 'admin':
+    
+    user_entry = next((u for u in users if u['username'] == username), None)
+    if not user_entry and username != 'admin':
         return render_template('404.html'), 404
 
+    # Inject actual verification status from users list
+    if user_entry:
+        user_data['is_verified'] = user_entry.get('is_verified', False)
+        user_data['username'] = username
+    elif username == 'admin':
+        user_data['is_verified'] = True
+        user_data['username'] = 'admin'
+
     # Check if user is an admin - if so, redirect to home page as requested
-    is_admin_user = any(u['username'] == username and u.get('role') == 'admin'
-                        for u in users) or username == 'admin'
+    is_admin_user = (user_entry and user_entry.get('role') == 'admin') or username == 'admin'
     if is_admin_user:
         return redirect(url_for('landing'))
 
@@ -760,7 +768,7 @@ def dashboard_toggle_user_verification(user_id):
         save_data(data)
         
         # Sync with Database
-        user_obj = User.query.get(str(user_id))
+        user_obj = db.session.get(User, str(user_id))
         if user_obj:
             user_obj.is_verified = target_user['is_verified']
             db.session.commit()
@@ -1394,6 +1402,12 @@ def index():
     username = session.get('username')
     data = load_data()
     portfolios = data.get('portfolios', {})
+    users = data.get('users', [])
+    
+    # Map verification status from user list to portfolios
+    user_verify_map = {u['username']: u.get('is_verified', False) for u in users}
+    for uname, port in portfolios.items():
+        port['is_verified'] = user_verify_map.get(uname, False)
     
     # Get social links for the footer
     admin_portfolio = portfolios.get('admin', {})
@@ -1474,8 +1488,15 @@ def catalog():
 
         user_info = user_status_map.get(username, {})
         is_demo = user_info.get('is_demo', True)
+        is_verified = user_info.get('is_verified', False)
+
+        # Only include verified users in catalog for visitors
+        if not is_verified and not session.get('admin_logged_in'):
+            continue
 
         if username == 'admin':
+            status = 'verified'
+        elif is_verified:
             status = 'verified'
         elif not is_demo:
             status = 'verified'
@@ -1488,6 +1509,7 @@ def catalog():
 
     return render_template('catalog.html',
                            portfolios=classified_portfolios,
+                           users_list=users,
                            is_public=True)
 
 

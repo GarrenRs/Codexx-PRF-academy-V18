@@ -25,6 +25,7 @@ class User(db.Model):
     role = db.Column(db.String(50), default='admin')
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
+    badges = db.Column(JSONB, default=[]) # List of badges: ["verified", "top_expert", "master"]
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Project(db.Model):
