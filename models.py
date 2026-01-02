@@ -61,9 +61,11 @@ class Message(db.Model):
     email = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    is_internal = db.Column(db.Boolean, default=False) # True for chat, False for public
-    sender_id = db.Column(db.String(36)) # For internal chat
-    receiver_id = db.Column(db.String(36)) # For internal chat
+    is_internal = db.Column(db.Boolean, default=False) # True for chat/reply, False for public inquiry
+    sender_id = db.Column(db.String(36)) # For internal messaging
+    receiver_id = db.Column(db.String(36)) # For internal messaging
+    parent_id = db.Column(db.String(36)) # To link replies to original message
+    sender_role = db.Column(db.String(20), default='visitor')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class VisitorLog(db.Model):

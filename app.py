@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
@@ -58,6 +59,10 @@ def inject_global_vars():
     current_theme = get_current_theme()
     is_demo_mode = session.get('is_demo_mode', True)
     is_admin = session.get('is_admin', False)
+    
+    # Load admin social links for the main platform footer
+    admin_data = load_data(username='admin')
+    social_links = admin_data.get('social', {})
 
     return {
         'current_theme': current_theme,
@@ -65,6 +70,7 @@ def inject_global_vars():
         'is_admin': is_admin,
         'username': username,
         'current_year': datetime.now().year,
+        'social': social_links,
         'get_unread_messages_count': get_unread_messages_count,
         'get_visitor_count': get_visitor_count,
         'get_clients_stats': lambda: get_clients_stats(username)
@@ -76,7 +82,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = 'static/assets/uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['JSON_AS_ASCII'] = False
-app.config['SESSION_COOKIE_SECURE'] = True  # Use HTTPS in production
+app.config['SESSION_COOKIE_SECURE'] = False  # Changed for development in Replit
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -988,10 +994,23 @@ def save_message(name,
 
 
 def get_unread_messages_count():
-    """Get count of unread messages"""
-    data = load_data()
-    return len(
-        [m for m in data.get('messages', []) if not m.get('read', False)])
+    """Get count of unread messages from both JSON and Database"""
+    username = session.get('username')
+    user_id = session.get('user_id')
+    
+    count = 0
+    # 1. JSON messages
+    data = load_data(username=username)
+    count += len([m for m in data.get('messages', []) if not m.get('read', False)])
+    
+    # 2. DB messages
+    if user_id:
+        try:
+            db_count = Message.query.filter_by(receiver_id=str(user_id), is_read=False).count()
+            count += db_count
+        except: pass
+        
+    return count
 
 
 def track_visitor(username=None):
@@ -1105,12 +1124,91 @@ def dashboard_chat(user_id=None):
     return redirect(url_for('dashboard_messages'))
 
 
-@app.route('/dashboard/chat/clear/<user_id>', methods=['POST'])
+@app.route('/dashboard/messages/reply/<message_id>', methods=['POST'])
 @login_required
 @disable_in_demo
-def dashboard_clear_chat(user_id):
-    """Clear internal chat history (Legacy)"""
-    return redirect(url_for('dashboard_messages'))
+def dashboard_reply_message(message_id):
+    """Admin reply to a user message internally"""
+    is_admin = session.get('is_admin')
+    if not is_admin:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('dashboard_messages'))
+
+    content = request.form.get('reply_content')
+    if not content:
+        flash('Reply content cannot be empty.', 'danger')
+        return redirect(url_for('dashboard_view_message', message_id=message_id))
+
+    # Load data to find the original message
+    data = load_data()
+    all_messages = []
+    
+    # Check all possible sources for the original message
+    # 1. Check database first (for Academy Inquiries)
+    db_msg = Message.query.get(message_id)
+    if db_msg:
+        # Save reply to database
+        new_reply = Message(
+            id=str(uuid.uuid4()),
+            parent_id=str(message_id),
+            name='Codexx Admin',
+            email='admin@codexx.academy',
+            message=content,
+            is_internal=True,
+            sender_id='admin',
+            sender_role='admin',
+            receiver_id=db_msg.sender_id,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_reply)
+        db.session.commit()
+        flash('Reply sent successfully.', 'success')
+        return redirect(url_for('dashboard_view_message', message_id=message_id))
+
+    # 2. Check JSON data (for Portfolio Messages)
+    # We need to find which user's data contains this message
+    # For now, let's check current user and admin
+    users_to_check = [session.get('username'), 'admin']
+    target_user = None
+    original_msg = None
+    
+    for user in users_to_check:
+        if not user: continue
+        user_data = load_data(username=user)
+        messages = user_data.get('messages', [])
+        original_msg = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
+        if original_msg:
+            target_user = user
+            break
+
+    if not original_msg:
+        flash('Original message not found.', 'danger')
+        return redirect(url_for('dashboard_messages'))
+
+    # Create a new reply message in JSON
+    new_reply = {
+        'id': str(uuid.uuid4()),
+        'parent_id': str(message_id),
+        'name': 'Codexx Admin',
+        'email': 'admin@codexx.academy',
+        'message': content,
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'read': False,
+        'is_internal': True,
+        'sender_id': 'admin',
+        'receiver_id': original_msg.get('sender_id'),
+        'type': 'reply'
+    }
+
+    user_data = load_data(username=target_user)
+    if 'messages' not in user_data:
+        user_data['messages'] = []
+    
+    user_data['messages'].append(new_reply)
+    save_data(user_data, username=target_user)
+
+    flash('Reply sent successfully.', 'success')
+    return redirect(url_for('dashboard_view_message', message_id=message_id))
 
 
 @app.route('/contact/academy', methods=['POST'])
@@ -1146,6 +1244,7 @@ def contact_academy():
                               message=message_content,
                               is_internal=False,
                               sender_id=user_id,
+                              sender_role='member' if user_id else 'visitor',
                               created_at=datetime.utcnow())
         db.session.add(new_message)
         db.session.commit()
@@ -1212,10 +1311,17 @@ def index():
     username = session.get('username')
     data = load_data()
     portfolios = data.get('portfolios', {})
+    
+    # Get social links for the footer
+    admin_portfolio = portfolios.get('admin', {})
+    social_links = admin_portfolio.get('social', {})
+
     return render_template('landing.html',
                            portfolios=portfolios,
                            is_logged_in=is_logged_in,
                            username=username,
+                           social=social_links,
+                           is_admin=session.get('is_admin', False),
                            data=data)
 
 
@@ -1375,101 +1481,70 @@ def send_confirmation_email(name, email, portfolio_owner_email):
 
 @app.route('/contact', methods=['POST'])
 def contact():
-    """Handle contact form submission with security"""
-    # Check honeypot field
-    honeypot = request.form.get('website', '').strip()
-    if honeypot:
-        # Bot detected - silently fail
-        log_ip_activity('bot_detected', 'Contact form honeypot triggered')
-        flash('Thank you for your message! I will get back to you soon.',
-              'success')
-        return redirect(url_for('index') + '#contact')
+    """Portfolio contact form processing - Consolidated storage"""
+    try:
+        # Check honeypot field
+        if request.form.get('website'):
+            return jsonify({'success': True})
 
-    # Check rate limiting
-    if not check_rate_limit('contact'):
-        log_ip_activity('rate_limit_exceeded',
-                        'Contact form submissions exceeded')
-        flash(
-            'Too many messages. Please wait a moment before sending another message.',
-            'error')
-        return redirect(url_for('index') + '#contact')
+        # Rate limiting
+        if not check_rate_limit('portfolio_contact'):
+            flash('Too many requests.', 'danger')
+            return redirect(request.referrer or url_for('index'))
 
-    name = request.form.get('name', '').strip()
-    email = request.form.get('email', '').strip()
-    request_type = request.form.get('request_type', '').strip()
-    interest_area = request.form.get('interest_area', '').strip()
-    seriousness = request.form.get('seriousness', 'inquiry').strip()
-    contact_pref = request.form.get('contact_pref', 'email').strip()
-    company = request.form.get('company', '').strip()
-    message = request.form.get('message', '').strip()
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message_content = request.form.get('message')
+        portfolio_owner = request.form.get('portfolio_owner') 
+        request_type = request.form.get('request_type', 'General Inquiry')
+        interest_area = request.form.get('interest_area', 'General')
 
-    if name and email and message and request_type and interest_area:
-        try:
-            # Determine which portfolio user this message is for
-            # Check if form contains portfolio_owner field (set by template)
-            portfolio_owner = request.form.get('portfolio_owner', '').strip()
+        if not all([name, email, message_content, portfolio_owner]):
+            flash('Required fields missing.', 'danger')
+            return redirect(request.referrer or url_for('index'))
 
-            # If not in form, try to extract from referrer URL
-            if not portfolio_owner and request.referrer:
-                # Check if referrer contains /portfolio/<username>
-                import re
-                match = re.search(r'/portfolio/([a-zA-Z0-9_-]+)',
-                                  request.referrer)
-                if match:
-                    portfolio_owner = match.group(1)
+        # Find target user
+        target_user = User.query.filter_by(username=portfolio_owner).first()
+        
+        # 1. Save to Database (Reliable central storage)
+        new_msg = Message(
+            id=str(uuid.uuid4()),
+            name=name,
+            email=email,
+            message=message_content,
+            is_internal=False,
+            sender_role='visitor',
+            receiver_id=target_user.id if target_user else None,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_msg)
+        db.session.commit()
 
-            # Default to admin if we couldn't determine portfolio owner
-            if not portfolio_owner:
-                portfolio_owner = ADMIN_CREDENTIALS['username']
+        # 2. Sync to JSON for the user's isolated view (Legacy fallback)
+        user_data = load_data(username=portfolio_owner)
+        if 'messages' not in user_data: user_data['messages'] = []
+        user_data['messages'].append({
+            'id': new_msg.id,
+            'name': name,
+            'email': email,
+            'message': message_content,
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'read': False,
+            'request_type': request_type,
+            'interest_area': interest_area,
+            'priority': 'normal'
+        })
+        save_data(user_data, username=portfolio_owner)
 
-            # Get portfolio owner's email for confirmation email
-            owner_data = load_data(username=portfolio_owner)
-            owner_email = owner_data.get('contact',
-                                         {}).get('email', 'support@codexx.com')
+        log_ip_activity('portfolio_contact', f'To: {portfolio_owner}')
+        flash('Your message has been delivered.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Contact error: {str(e)}")
+        flash('System error.', 'danger')
 
-            # Prepare extra data
-            extra_msg_data = {
-                'request_type': request_type,
-                'interest_area': interest_area,
-                'seriousness': seriousness,
-                'contact_pref': contact_pref,
-                'company': company
-            }
-
-            # Save message to the correct portfolio owner
-            priority = 'high' if seriousness == 'soon' else 'normal'
-            save_message(name,
-                         email,
-                         message,
-                         username=portfolio_owner,
-                         priority=priority,
-                         extra_data=extra_msg_data)
-
-            # Send confirmation email to visitor (async for better UX)
-            thread = threading.Thread(target=send_confirmation_email,
-                                      args=(name, email, owner_email))
-            thread.daemon = True
-            thread.start()
-
-            flash(
-                'Thank you for your message! I will get back to you soon. Check your email for confirmation.',
-                'success')
-        except Exception as e:
-            app.logger.error(f"Contact form error: {str(e)}")
-            flash(
-                'Sorry, there was an error sending your message. Please try again.',
-                'error')
-    else:
-        flash('Please fill in all required fields.', 'error')
-
-    # Determine redirect target
-    portfolio_owner = request.form.get('portfolio_owner', '').strip()
-    if portfolio_owner and portfolio_owner != ADMIN_CREDENTIALS['username']:
-        # If the user is on a specific portfolio page
-        return redirect(
-            url_for('user_portfolio', username=portfolio_owner) + '#contact')
-
-    return redirect(url_for('index') + '#contact')
+    return redirect(request.referrer or url_for('index'))
 
 
 @app.route('/portfolio/<username>/project/<int:project_id>')
@@ -2472,35 +2547,77 @@ def dashboard_messages():
     # If admin, also fetch global messages from the database
     if is_admin:
         try:
-            # Fetch messages from PostgreSQL that are not internal
-            db_messages = Message.query.filter_by(is_internal=False).order_by(
-                Message.created_at.desc()).all()
+            # Filter by role if requested
+            role_filter = request.args.get('role')
+            source_filter = request.args.get('source')
+            query = Message.query.filter_by(parent_id=None)
+            
+            if role_filter == 'member':
+                query = query.filter(Message.sender_role == 'member')
+            elif role_filter == 'visitor':
+                query = query.filter(Message.sender_role == 'visitor')
+            
+            if source_filter == 'portfolio':
+                query = query.filter(Message.sender_role == 'visitor')
+            elif source_filter == 'academy':
+                query = query.filter(Message.sender_role != 'visitor')
+                
+            db_messages = query.order_by(Message.created_at.desc()).all()
             for msg in db_messages:
                 all_messages.append({
-                    'id':
-                    str(msg.id),  # Ensure ID is string for uniform handling
-                    'name':
-                    msg.name,
-                    'email':
-                    msg.email,
-                    'message':
-                    msg.message,
-                    'date':
-                    msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'read':
-                    msg.is_read,
-                    'request_type':
-                    'Academy Inquiry'
-                    if not msg.sender_id else 'Portfolio Message',
-                    'interest_area':
-                    'General' if not msg.sender_id else 'Direct',
-                    'priority':
-                    'normal',
-                    'is_db':
-                    True
+                    'id': str(msg.id),
+                    'name': msg.name,
+                    'email': msg.email,
+                    'message': msg.message,
+                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': msg.is_read,
+                    'request_type': 'Portfolio Message' if msg.sender_role == 'visitor' else 'Academy Inquiry',
+                    'interest_area': 'Direct' if msg.sender_role == 'visitor' else 'General',
+                    'priority': 'normal',
+                    'sender_role': msg.sender_role or ('member' if msg.sender_id else 'visitor'),
+                    'receiver_id': msg.receiver_id,
+                    'sender_id': msg.sender_id,
+                    'is_db': True
                 })
         except Exception as e:
             app.logger.error(f"Error fetching DB messages: {str(e)}")
+    else:
+        # For members, fetch messages from DB where they are the receiver
+        try:
+            member_messages = Message.query.filter_by(receiver_id=str(session.get('user_id'))).all()
+            for msg in member_messages:
+                # We only show threads in the main list, but for members receiving a reply, 
+                # they might need to see it. For simplicity, let's add them to the list.
+                all_messages.append({
+                    'id': str(msg.id),
+                    'parent_id': msg.parent_id,
+                    'name': msg.name,
+                    'email': msg.email,
+                    'message': msg.message,
+                    'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': msg.is_read,
+                    'request_type': 'Portfolio Message' if msg.sender_role == 'visitor' else 'Academy Reply',
+                    'interest_area': 'Direct',
+                    'priority': 'normal',
+                    'sender_role': msg.sender_role,
+                    'receiver_id': msg.receiver_id,
+                    'sender_id': msg.sender_id,
+                    'is_db': True
+                })
+        except Exception as e:
+            app.logger.error(f"Error fetching member DB messages: {str(e)}")
+
+    # Source filtering for ALL roles
+    source_filter = request.args.get('source')
+    if source_filter:
+        if source_filter == 'academy':
+            messages = [m for m in all_messages if m.get('request_type') in ['Academy Inquiry', 'Academy Reply']]
+        elif source_filter == 'portfolio':
+            messages = [m for m in all_messages if m.get('request_type') == 'Portfolio Message']
+        else:
+            messages = all_messages
+    else:
+        messages = all_messages
 
     # Get priority filter from query parameter
     priority_filter = request.args.get('priority', 'all')
@@ -2508,15 +2625,21 @@ def dashboard_messages():
     # Filter by priority if specified
     if priority_filter != 'all':
         messages = [
-            m for m in all_messages
+            m for m in messages
             if m.get('priority', 'normal') == priority_filter
         ]
-    else:
-        messages = all_messages
 
-    # Sort by date descending
-    messages = sorted(messages, key=lambda x: x.get('date', ''), reverse=True)
-
+    # Identify replies and remove them from main list if we want to show threads
+    # BUT: For users, if the message IS a reply to them, they should probably see it if the parent isn't there
+    thread_messages = []
+    for m in messages:
+        if not m.get('parent_id'):
+            thread_messages.append(m)
+        elif not is_admin and m.get('receiver_id') == str(session.get('user_id')):
+            # If it's a reply sent TO the user, and we are not admin, show it if the parent is not in their JSON
+            # This handles the case where admin replies to a DB inquiry
+            thread_messages.append(m)
+    
     # Calculate priority counts for dashboard
     priority_stats = {
         'high':
@@ -2532,18 +2655,21 @@ def dashboard_messages():
     }
 
     return render_template('dashboard/messages.html',
-                           messages=messages,
+                           messages=thread_messages,
                            priority_filter=priority_filter,
                            priority_stats=priority_stats)
 
 
 @app.route('/dashboard/messages/view/<message_id>')
 @login_required
+@disable_in_demo
 def dashboard_view_message(message_id):
     """View specific message for current user or admin"""
     username = session.get('username')
     is_admin = session.get('is_admin')
-
+    data = load_data(username=username)
+    messages = data.get('messages', [])
+    
     # Check if it's a DB message (for admin)
     if is_admin:
         try:
@@ -2560,14 +2686,48 @@ def dashboard_view_message(message_id):
                     'message': db_msg.message,
                     'date': db_msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     'read': db_msg.is_read,
+                    'sender_role': db_msg.sender_role or ('member' if db_msg.sender_id else 'visitor'),
                     'request_type': 'Academy Inquiry'
                 }
-                return render_template('dashboard/view_message.html',
-                                       message=message)
-        except:
-            pass
+                replies = [m for m in messages if m.get('parent_id') == str(message_id)]
+                return render_template('dashboard/view_message.html', message=message, replies=replies)
+        except Exception as e:
+            app.logger.error(f"Error viewing DB message: {str(e)}")
 
     # Fallback to JSON isolation
+    message = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
+    
+    # If not in JSON, check if it's a DB message where user is receiver
+    if not message and not is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg and db_msg.receiver_id == str(session.get('user_id')):
+                message = {
+                    'id': db_msg.id,
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message,
+                    'date': db_msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': db_msg.is_read,
+                    'sender_role': db_msg.sender_role,
+                    'request_type': 'Academy Reply',
+                    'is_db': True
+                }
+                if not db_msg.is_read:
+                    db_msg.is_read = True
+                    db.session.commit()
+        except Exception as e:
+            app.logger.error(f"Error viewing member DB message: {str(e)}")
+    if not message:
+        flash('Message not found.', 'danger')
+        return redirect(url_for('dashboard_messages'))
+
+    if not message.get('read'):
+        message['read'] = True
+        save_data(data, username=username)
+
+    replies = [m for m in messages if str(m.get('parent_id')) == str(message_id)]
+    return render_template('dashboard/view_message.html', message=message, replies=replies)
     data = load_data(username=username)
     message = next((m for m in data.get('messages', [])
                     if str(m.get('id')) == str(message_id)), None)

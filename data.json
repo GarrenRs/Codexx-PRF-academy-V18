@@ -43,18 +43,6 @@
     "theme": "luxury-gold"
   },
   "clients": [],
-  "users": [
-    {
-      "id": 1,
-      "username": "Codexx",
-      "password_hash": "scrypt:32768:8:1$KIXyi2D7b7hNSOAI$1e82dab664e16ca6f494340d4a538b74dda85f1f94b7b91fc117c722ed28f049043ab95b75c1b00136460e7750da826819b3443033813c619bdc8465f7c357b0",
-      "email": "Raesondark@gmail.com",
-      "role": "user",
-      "is_demo": true,
-      "created_at": "2026-01-01 16:03:22",
-      "is_verified": true
-    }
-  ],
   "portfolios": {
     "Codexx": {
       "username": "Codexx",
@@ -65,7 +53,53 @@
       "photo": "",
       "skills": [],
       "projects": [],
-      "messages": [],
+      "messages": [
+        {
+          "id": 1,
+          "name": "Dark Raeson",
+          "email": "ahmed@example.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:15:37",
+          "read": false,
+          "ip": "105.235.133.236, 10.82.5.196",
+          "recipient": "Codexx",
+          "priority": "normal",
+          "category": "general",
+          "request_type": "service",
+          "interest_area": "development",
+          "seriousness": "inquiry",
+          "contact_pref": "whatsapp",
+          "company": "Fzlz"
+        },
+        {
+          "id": 2,
+          "name": "Raeson",
+          "email": "raesonrs@gmail.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:18:04",
+          "read": false,
+          "ip": "105.235.133.236, 10.82.8.241",
+          "recipient": "Codexx",
+          "priority": "normal",
+          "category": "general",
+          "request_type": "service",
+          "interest_area": "development",
+          "seriousness": "inquiry",
+          "contact_pref": "whatsapp",
+          "company": ""
+        },
+        {
+          "id": "16483a9c-d7d4-4d2a-ae27-61bc81f8a266",
+          "name": "Garre",
+          "email": "az9fdfqp@accclone.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:24:34",
+          "read": false,
+          "request_type": "service",
+          "interest_area": "development",
+          "priority": "normal"
+        }
+      ],
       "clients": [],
       "contact": {
         "email": "",
@@ -81,18 +115,52 @@
         "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 1,
+        "total": 4,
         "today": [
           {
-            "ip": "105.235.129.241, 10.83.9.120",
-            "timestamp": "2026-01-01 16:14:42",
-            "date": "2026-01-01"
+            "ip": "105.235.133.236, 10.82.8.241",
+            "timestamp": "2026-01-02 14:14:53",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.5.196",
+            "timestamp": "2026-01-02 14:15:37",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.9.183",
+            "timestamp": "2026-01-02 14:17:36",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.8.241",
+            "timestamp": "2026-01-02 14:18:04",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.0.141",
+            "timestamp": "2026-01-02 14:24:34",
+            "date": "2026-01-02"
           }
         ],
         "unique_ips": [
-          "105.235.129.241, 10.83.9.120"
+          "105.235.133.236, 10.82.9.183",
+          "105.235.133.236, 10.82.8.241",
+          "105.235.133.236, 10.82.0.141",
+          "105.235.133.236, 10.82.5.196"
         ]
       }
     }
-  }
+  },
+  "users": [
+    {
+      "id": 1,
+      "username": "Codexx",
+      "password_hash": "scrypt:32768:8:1$smPLEExkexbcjFYf$8c7e4da78884ebac2830a869e3a876031795f421f8a41859ff2449331e0cf451dfd88aa15eb8227b69e2dc93577b66e614297dd97cec4a10b9f0fdfa2a3fd3cf",
+      "email": "sarah@example.com",
+      "role": "user",
+      "is_demo": false,
+      "created_at": "2026-01-02 14:11:59"
+    }
+  ]
 }

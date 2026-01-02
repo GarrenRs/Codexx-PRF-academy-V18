@@ -446,6 +446,7 @@
     </section>
 
     <!-- Academy Contact Section -->
+    {% if not is_logged_in %}
     <section id="academy-contact" class="section-padding bg-black border-top" style="border-color: rgba(212, 175, 55, 0.1) !important;">
         <div class="container">
             <div class="text-center mb-5">
@@ -485,6 +486,7 @@
             </div>
         </div>
     </section>
+    {% endif %}
 
     <footer class="footer">
         <div class="container">
@@ -499,10 +501,33 @@
                         A curated environment where real work is shown, not sold. We provide the infrastructure for verified builders, service providers, and project owners to present authentic proof of execution.
                     </p>
                     <div class="social-links d-flex gap-3">
-                        <a href="#" class="social-icon-btn" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#" class="social-icon-btn" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
-                        <a href="#" class="social-icon-btn" title="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="social-icon-btn" title="GitHub"><i class="fab fa-github"></i></a>
+                        {% if social %}
+                            {% if social.linkedin %}
+                            <a href="{{ social.linkedin }}" class="social-icon-btn" title="LinkedIn" target="_blank">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                            {% endif %}
+                            {% if social.twitter %}
+                            <a href="{{ social.twitter }}" class="social-icon-btn" title="Twitter" target="_blank">
+                                <i class="fab fa-x-twitter"></i>
+                            </a>
+                            {% endif %}
+                            {% if social.instagram %}
+                            <a href="{{ social.instagram }}" class="social-icon-btn" title="Instagram" target="_blank">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            {% endif %}
+                            {% if social.github %}
+                            <a href="{{ social.github }}" class="social-icon-btn" title="GitHub" target="_blank">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="#" class="social-icon-btn" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="#" class="social-icon-btn" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+                            <a href="#" class="social-icon-btn" title="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-icon-btn" title="GitHub"><i class="fab fa-github"></i></a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-4">

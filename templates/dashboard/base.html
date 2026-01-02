@@ -281,19 +281,25 @@
                     <i class="fas fa-users-cog"></i>
                     <span>User Directory</span>
                 </a>
-                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
-                    <i class="fas fa-comment-dots"></i>
-                    <span>Platform Inquiries</span>
+                <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
+                    <i class="fas fa-hashtag"></i>
+                    <span>Channels</span>
                 </a>
                 
+                <div class="nav-section-title">Communications</div>
+                <a href="{{ url_for('dashboard_messages', role='member') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('role') == 'member' %}active{% endif %}">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Member Messages</span>
+                </a>
+                <a href="{{ url_for('dashboard_messages', role='visitor') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('role') == 'visitor' %}active{% endif %}">
+                    <i class="fas fa-user-clock"></i>
+                    <span>Visitor Inquiries</span>
+                </a>
+
                 <div class="nav-section-title">Conversion Tools</div>
                 <a href="{{ url_for('dashboard_clients') }}" class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}">
                     <i class="fas fa-user-plus"></i>
                     <span>Convert Leads</span>
-                </a>
-                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Message to Client</span>
                 </a>
                 {% else %}
                 <div class="nav-section-title">Portfolio Builder</div>
@@ -324,9 +330,13 @@
                     <span>CRM</span>
                     {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-auto small opacity-50"></i>{% endif %}
                 </a>
-                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
-                    <i class="fas fa-comment-dots"></i>
+                <a href="{{ url_for('dashboard_messages', source='academy') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('source') == 'academy' %}active{% endif %}">
+                    <i class="fas fa-university"></i>
                     <span>Academy Inquiries</span>
+                </a>
+                <a href="{{ url_for('dashboard_messages', source='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('source') == 'portfolio' %}active{% endif %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Portfolio Messages</span>
                 </a>
                 <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
                     <i class="fas fa-hashtag"></i>
@@ -363,6 +373,15 @@
                 <h6 class="mb-0 fw-600 opacity-75">Welcome, {{ session.get('username') }}</h6>
             </div>
             <div class="d-flex align-items-center gap-3">
+                <a href="{{ url_for('dashboard_messages') }}" class="btn btn-sm btn-outline-light border-0 opacity-75 position-relative" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    {% set unread = get_unread_messages_count() %}
+                    {% if unread > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.25em 0.4em;">
+                        {{ unread }}
+                    </span>
+                    {% endif %}
+                </a>
                 <a href="{{ url_for('catalog') }}" class="btn btn-sm btn-outline-light border-0 opacity-75" title="Catalog">
                     <i class="fas fa-book-open"></i>
                 </a>

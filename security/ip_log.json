@@ -215,5 +215,68 @@
     "activity": "user_login",
     "details": "User: Codexx",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.129.241, 10.82.10.43",
+    "timestamp": "2026-01-01 16:55:12",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.0.141",
+    "timestamp": "2026-01-02 13:09:49",
+    "activity": "user_login",
+    "details": "User: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.0.141",
+    "timestamp": "2026-01-02 13:45:55",
+    "activity": "admin_login",
+    "details": "User: admin",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.0.141",
+    "timestamp": "2026-01-02 13:53:18",
+    "activity": "contact_message",
+    "details": "From: ngivuxlf@eacademia.uk to Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.8.241",
+    "timestamp": "2026-01-02 14:04:28",
+    "activity": "contact_message",
+    "details": "From: ahmed@example.com to Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.8.241",
+    "timestamp": "2026-01-02 14:14:44",
+    "activity": "user_login",
+    "details": "User: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.5.196",
+    "timestamp": "2026-01-02 14:15:37",
+    "activity": "contact_message",
+    "details": "From: ahmed@example.com to Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.8.241",
+    "timestamp": "2026-01-02 14:18:04",
+    "activity": "contact_message",
+    "details": "From: raesonrs@gmail.com to Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0"
+  },
+  {
+    "ip": "105.235.133.236, 10.82.0.141",
+    "timestamp": "2026-01-02 14:24:34",
+    "activity": "portfolio_contact",
+    "details": "To: Codexx",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0"
   }
 ]
