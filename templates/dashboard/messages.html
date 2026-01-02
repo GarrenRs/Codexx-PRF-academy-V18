@@ -8,17 +8,17 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                     <i class="fas fa-envelope-open-text me-2 text-gold"></i>
                     {% if current_category == 'platform' %}
                         <span class="gold-text">Academy Inquiries</span>
-                        <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Direct communication with Codexx Academy Admin</small>
                     {% elif current_category == 'internal' %}
                         <span class="gold-text">Internal Communications</span>
-                        <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Messages between members and administration</small>
-                    {% else %}
+                    {% elif current_category == 'portfolio' %}
                         <span class="gold-text">Portfolio Messages</span>
-                        <small class="d-block text-muted mt-1 fw-normal" style="font-size: 0.75rem;">Inquiries from visitors viewing your public portfolio</small>
+                    {% else %}
+                        <span class="gold-text">All Messages</span>
                     {% endif %}
                 </h5>
                 <div>
                     <div class="btn-group btn-group-sm me-2">
+                        <a href="{{ url_for('dashboard_messages', category='all') }}" class="btn btn-outline-gold {% if not current_category or current_category == 'all' %}active{% endif %}">All</a>
                         {% if is_admin %}
                         <a href="{{ url_for('dashboard_messages', category='platform') }}" class="btn btn-outline-gold {% if current_category == 'platform' %}active{% endif %}">Platform</a>
                         {% endif %}

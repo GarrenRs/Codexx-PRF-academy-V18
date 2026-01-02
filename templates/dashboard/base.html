@@ -287,15 +287,11 @@
                 </a>
                 
                 <div class="nav-section-title">Communications</div>
-                <a href="{{ url_for('dashboard_messages', category='internal') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'internal' %}active{% endif %}">
-                    <i class="fas fa-user-shield"></i>
-                    <span>Member Messages</span>
+                <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <span>Inbox</span>
                 </a>
-                <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'portfolio' %}active{% endif %}">
-                    <i class="fas fa-user-clock"></i>
-                    <span>Visitor Inquiries</span>
-                </a>
-
+                
                 <div class="nav-section-title">Conversion Tools</div>
                 <a href="{{ url_for('dashboard_clients') }}" class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}">
                     <i class="fas fa-user-plus"></i>
@@ -330,13 +326,9 @@
                     <span>CRM</span>
                     {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-auto small opacity-50"></i>{% endif %}
                 </a>
-                <a href="{{ url_for('dashboard_messages', category='internal') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'internal' %}active{% endif %}">
-                    <i class="fas fa-university"></i>
-                    <span>Academy Inquiries</span>
-                </a>
-                <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' and request.args.get('category') == 'portfolio' %}active{% endif %}">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Portfolio Messages</span>
+                <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <span>Inbox</span>
                 </a>
                 <a href="{{ url_for('dashboard_social') }}" class="nav-link {% if request.endpoint == 'dashboard_social' %}active{% endif %}">
                     <i class="fas fa-hashtag"></i>
@@ -373,15 +365,29 @@
                 <h6 class="mb-0 fw-600 opacity-75">Welcome, {{ session.get('username') }}</h6>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <a href="{{ url_for('dashboard_messages') }}" class="btn btn-sm btn-outline-light border-0 opacity-75 position-relative" title="Notifications">
-                    <i class="fas fa-bell"></i>
-                    {% set unread = get_unread_messages_count() %}
-                    {% if unread > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.25em 0.4em;">
-                        {{ unread }}
-                    </span>
-                    {% endif %}
-                </a>
+                <div class="dropdown" id="notificationDropdown">
+                    <button class="btn btn-sm btn-outline-light border-0 opacity-75 position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="notificationBell">
+                        <i class="fas fa-bell"></i>
+                        {% set unread = get_unread_messages_count() %}
+                        {% if unread > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="font-size: 0.6rem; padding: 0.25em 0.4em;">
+                            {{ unread }}
+                        </span>
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-0 shadow-lg border-0 bg-dark" style="width: 320px; border-radius: 15px; overflow: hidden;">
+                        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold gold-text">Notifications</h6>
+                            <a href="{{ url_for('dashboard_messages') }}" class="small text-muted text-decoration-none">View All</a>
+                        </div>
+                        <div id="notificationList" class="overflow-auto" style="max-height: 400px;">
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-bell-slash fa-2x mb-2 opacity-25"></i>
+                                <p class="small mb-0">Loading notifications...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <a href="{{ url_for('catalog') }}" class="btn btn-sm btn-outline-light border-0 opacity-75" title="Catalog">
                     <i class="fas fa-book-open"></i>
                 </a>
@@ -447,8 +453,49 @@
                 sidebar.classList.remove('show');
             }
         });
-    </script>
 
-    {% block scripts %}{% endblock %}
+        // Notification logic
+        document.getElementById('notificationBell').addEventListener('click', function() {
+            const list = document.getElementById('notificationList');
+            list.innerHTML = '<div class="p-4 text-center text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2 opacity-25"></i><p class="small mb-0">Loading...</p></div>';
+            
+            fetch('/dashboard/notifications/latest')
+                .then(response => response.json())
+                .then(data => {
+                    list.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        list.innerHTML = '<div class="p-4 text-center text-muted"><p class="small mb-0">No new messages</p></div>';
+                        return;
+                    }
+                    data.forEach(msg => {
+                        const item = document.createElement('a');
+                        item.href = `/dashboard/messages/view/${msg.id}`;
+                        item.className = 'dropdown-item p-3 border-bottom border-secondary d-flex gap-3 align-items-start text-wrap';
+                        item.style.transition = 'background 0.2s';
+                        
+                        let icon = 'fa-briefcase text-success';
+                        if (msg.category === 'internal') icon = 'fa-reply-all text-info';
+                        if (msg.category === 'platform') icon = 'fa-university text-primary';
+                        
+                        item.innerHTML = `
+                            <div class="avatar-sm bg-dark rounded-circle d-flex align-items-center justify-content-center border border-secondary flex-shrink-0" style="width: 32px; height: 32px;">
+                                <i class="fas ${icon}" style="font-size: 0.9rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-white small d-block text-truncate">${msg.name}</strong>
+                                    <small class="text-muted" style="font-size: 0.65rem;">${msg.time}</small>
+                                </div>
+                                <p class="text-muted small mb-0 text-truncate" style="max-width: 200px;">${msg.message}</p>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                })
+                .catch(err => {
+                    list.innerHTML = '<div class="p-4 text-center text-muted"><p class="small mb-0 text-danger">Error loading notifications</p></div>';
+                });
+        });
+    </script>
 </body>
 </html>

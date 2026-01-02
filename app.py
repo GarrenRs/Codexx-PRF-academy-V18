@@ -2548,7 +2548,9 @@ def dashboard_messages():
                 db_messages = Message.query.filter_by(category='portfolio', parent_id=None, receiver_id=user_id).order_by(Message.created_at.desc()).all()
         else:
             # Regular user only sees messages belonging to their portfolio category or internal
-            if category == 'internal':
+            if category == 'all':
+                 db_messages = Message.query.filter(Message.parent_id == None, (Message.receiver_id == user_id) | (Message.sender_id == user_id)).order_by(Message.created_at.desc()).all()
+            elif category == 'internal':
                  db_messages = Message.query.filter_by(category='internal', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()
             else: # portfolio
                  db_messages = Message.query.filter_by(category='portfolio', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()

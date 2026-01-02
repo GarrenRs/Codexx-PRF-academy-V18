@@ -1,0 +1,237 @@
+{
+  "name": "Demo Portfolio - Codexx",
+  "title": "Web Developer & Designer",
+  "description": "Experience the power of Codexx Academy Platform with this interactive demo",
+  "photo": "static/assets/profile-placeholder.svg",
+  "about": "Welcome to the Codexx Academy Platform! This is a live demo showcasing all the features available in our professional portfolio management system. Feel free to explore and customize this demo to see how your portfolio would look.",
+  "skills": [
+    {
+      "name": "Web Development",
+      "level": 90
+    },
+    {
+      "name": "UI/UX Design",
+      "level": 85
+    },
+    {
+      "name": "JavaScript",
+      "level": 88
+    },
+    {
+      "name": "React.js",
+      "level": 85
+    },
+    {
+      "name": "Python",
+      "level": 80
+    }
+  ],
+  "projects": [],
+  "contact": {
+    "email": "demo@codexx.com",
+    "phone": "+1 234 567 8900",
+    "location": "San Francisco, CA"
+  },
+  "social": {},
+  "messages": [],
+  "visitors": {
+    "total": 0,
+    "today": [],
+    "unique_ips": []
+  },
+  "settings": {
+    "theme": "luxury-gold"
+  },
+  "clients": [],
+  "portfolios": {
+    "Codexx": {
+      "username": "Codexx",
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "",
+      "skills": [],
+      "projects": [],
+      "messages": [
+        {
+          "id": 1,
+          "name": "Dark Raeson",
+          "email": "ahmed@example.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:15:37",
+          "read": false,
+          "ip": "105.235.133.236, 10.82.5.196",
+          "recipient": "Codexx",
+          "priority": "normal",
+          "category": "general",
+          "request_type": "service",
+          "interest_area": "development",
+          "seriousness": "inquiry",
+          "contact_pref": "whatsapp",
+          "company": "Fzlz"
+        },
+        {
+          "id": 2,
+          "name": "Raeson",
+          "email": "raesonrs@gmail.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:18:04",
+          "read": false,
+          "ip": "105.235.133.236, 10.82.8.241",
+          "recipient": "Codexx",
+          "priority": "normal",
+          "category": "general",
+          "request_type": "service",
+          "interest_area": "development",
+          "seriousness": "inquiry",
+          "contact_pref": "whatsapp",
+          "company": ""
+        },
+        {
+          "id": "16483a9c-d7d4-4d2a-ae27-61bc81f8a266",
+          "name": "Garre",
+          "email": "az9fdfqp@accclone.com",
+          "message": "Hi how are you",
+          "date": "2026-01-02 14:24:34",
+          "read": false,
+          "request_type": "service",
+          "interest_area": "development",
+          "priority": "normal"
+        },
+        {
+          "id": "49727f84-a86b-4e53-afe6-347cddeccae4",
+          "name": "barcodex-db",
+          "email": "codexxrs@outlook.sa",
+          "message": "Hi am visitor",
+          "date": "2026-01-02 15:32:46",
+          "read": false,
+          "category": "portfolio"
+        }
+      ],
+      "clients": [],
+      "contact": {
+        "email": "",
+        "phone": "",
+        "location": ""
+      },
+      "social": {
+        "linkedin": "",
+        "github": "",
+        "twitter": ""
+      },
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "visitors": {
+        "total": 8,
+        "today": [
+          {
+            "ip": "105.235.133.236, 10.82.8.241",
+            "timestamp": "2026-01-02 14:14:53",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.5.196",
+            "timestamp": "2026-01-02 14:15:37",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.9.183",
+            "timestamp": "2026-01-02 14:17:36",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.8.241",
+            "timestamp": "2026-01-02 14:18:04",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.82.0.141",
+            "timestamp": "2026-01-02 14:24:34",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.83.4.98",
+            "timestamp": "2026-01-02 15:26:42",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.83.11.58",
+            "timestamp": "2026-01-02 15:26:47",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.83.11.58",
+            "timestamp": "2026-01-02 15:27:18",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.83.7.67",
+            "timestamp": "2026-01-02 15:32:20",
+            "date": "2026-01-02"
+          },
+          {
+            "ip": "105.235.133.236, 10.83.8.167",
+            "timestamp": "2026-01-02 15:32:46",
+            "date": "2026-01-02"
+          }
+        ],
+        "unique_ips": [
+          "105.235.133.236, 10.83.4.98",
+          "105.235.133.236, 10.82.5.196",
+          "105.235.133.236, 10.83.7.67",
+          "105.235.133.236, 10.83.8.167",
+          "105.235.133.236, 10.83.11.58",
+          "105.235.133.236, 10.82.0.141",
+          "105.235.133.236, 10.82.9.183",
+          "105.235.133.236, 10.82.8.241"
+        ]
+      }
+    },
+    "admin": {
+      "name": "admin",
+      "title": "Web Developer & Designer",
+      "description": "Welcome to my professional portfolio.",
+      "skills": [],
+      "projects": [],
+      "messages": [],
+      "clients": [
+        {
+          "id": 1,
+          "name": "GarrenSY",
+          "email": "Raesonrs@gmail.com",
+          "phone": "",
+          "company": "",
+          "project_title": "Inquiry from GarrenSY",
+          "project_description": "Hi",
+          "status": "lead",
+          "price": "",
+          "deadline": "",
+          "start_date": "2026-01-02",
+          "notes": "",
+          "created_at": "2026-01-02 15:31:06"
+        }
+      ],
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "visitors": {
+        "total": 0,
+        "today": [],
+        "unique_ips": []
+      }
+    }
+  },
+  "users": [
+    {
+      "id": 1,
+      "username": "Codexx",
+      "password_hash": "scrypt:32768:8:1$smPLEExkexbcjFYf$8c7e4da78884ebac2830a869e3a876031795f421f8a41859ff2449331e0cf451dfd88aa15eb8227b69e2dc93577b66e614297dd97cec4a10b9f0fdfa2a3fd3cf",
+      "email": "sarah@example.com",
+      "role": "user",
+      "is_demo": false,
+      "created_at": "2026-01-02 14:11:59"
+    }
+  ]
+}

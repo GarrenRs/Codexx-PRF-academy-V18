@@ -31,3 +31,7 @@ alembic
 APScheduler
 python-dotenv
 requests
+alembic
+apscheduler
+python-dotenv
+requests
