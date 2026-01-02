@@ -159,6 +159,9 @@
             display: flex;
             flex-direction: column;
             transition: var(--transition);
+            position: relative;
+            background: #0a0a0a;
+            width: calc(100% - var(--sidebar-width));
         }
 
         .top-navbar {
@@ -166,7 +169,7 @@
             background: rgba(10, 10, 10, 0.8);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 0 2rem;
+            padding: 0 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -176,10 +179,10 @@
         }
 
         .content-body {
-            padding: 2rem;
-            max-width: 1400px;
+            padding: 1.5rem;
             width: 100%;
-            margin: 0 auto;
+            margin: 0;
+            flex: 1;
         }
 
         /* Modern UI Components */
@@ -290,12 +293,6 @@
                 <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-envelope-open-text"></i>
                     <span>Inbox</span>
-                </a>
-                
-                <div class="nav-section-title">Conversion Tools</div>
-                <a href="{{ url_for('dashboard_clients') }}" class="nav-link {% if request.endpoint == 'dashboard_clients' %}active{% endif %}">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Convert Leads</span>
                 </a>
                 {% else %}
                 <div class="nav-section-title">Portfolio Builder</div>
@@ -454,24 +451,53 @@
             }
         });
 
-        // Notification logic
-        document.getElementById('notificationBell').addEventListener('click', function() {
-            const list = document.getElementById('notificationList');
-            list.innerHTML = '<div class="p-4 text-center text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2 opacity-25"></i><p class="small mb-0">Loading...</p></div>';
-            
+        // Real-time Notification System
+        let lastUnreadCount = 0;
+
+        function updateNotifications() {
             fetch('/dashboard/notifications/latest')
                 .then(response => response.json())
                 .then(data => {
-                    list.innerHTML = '';
-                    if (!data || data.length === 0) {
+                    const list = document.getElementById('notificationList');
+                    const badgeContainer = document.querySelector('.notification-badge');
+                    const bellBtn = document.getElementById('notificationBell');
+                    
+                    // Update badge and count
+                    const unreadCount = data.length;
+                    if (unreadCount > 0) {
+                        if (badgeContainer) {
+                            badgeContainer.textContent = unreadCount;
+                            badgeContainer.style.display = 'block';
+                        } else {
+                            // Create badge if missing
+                            const badge = document.createElement('span');
+                            badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge';
+                            badge.style.cssText = 'font-size: 0.6rem; padding: 0.25em 0.4em;';
+                            badge.textContent = unreadCount;
+                            bellBtn.appendChild(badge);
+                        }
+                        
+                        // Alert sound or visual hint if count increased
+                        if (unreadCount > lastUnreadCount) {
+                            bellBtn.classList.add('animate-bounce');
+                            setTimeout(() => bellBtn.classList.remove('animate-bounce'), 1000);
+                        }
+                    } else if (badgeContainer) {
+                        badgeContainer.style.display = 'none';
+                    }
+                    lastUnreadCount = unreadCount;
+
+                    // Update the dropdown list content
+                    if (data.length === 0) {
                         list.innerHTML = '<div class="p-4 text-center text-muted"><p class="small mb-0">No new messages</p></div>';
                         return;
                     }
+
+                    list.innerHTML = '';
                     data.forEach(msg => {
                         const item = document.createElement('a');
                         item.href = `/dashboard/messages/view/${msg.id}`;
                         item.className = 'dropdown-item p-3 border-bottom border-secondary d-flex gap-3 align-items-start text-wrap';
-                        item.style.transition = 'background 0.2s';
                         
                         let icon = 'fa-briefcase text-success';
                         if (msg.category === 'internal') icon = 'fa-reply-all text-info';
@@ -492,10 +518,16 @@
                         list.appendChild(item);
                     });
                 })
-                .catch(err => {
-                    list.innerHTML = '<div class="p-4 text-center text-muted"><p class="small mb-0 text-danger">Error loading notifications</p></div>';
-                });
-        });
+                .catch(err => console.error('Notification error:', err));
+        }
+
+        // Poll every 30 seconds for real-time updates
+        setInterval(updateNotifications, 30000);
+        // Initial load
+        updateNotifications();
+
+        // Optional: Manual refresh on bell click
+        document.getElementById('notificationBell').addEventListener('click', updateNotifications);
     </script>
 </body>
 </html>

@@ -186,11 +186,18 @@
                     <a href="mailto:{{ message.email }}" class="btn btn-primary">
                         <i class="fas fa-envelope me-2"></i>Send Email
                     </a>
+                    {% if session.get('is_admin') %}
+                    <a href="{{ url_for('dashboard_users') }}" 
+                       class="btn btn-success">
+                        <i class="fas fa-user-plus me-2"></i>Register User
+                    </a>
+                    {% else %}
                     <a href="{{ url_for('dashboard_convert_message_to_client', message_id=message.id) }}" 
                        class="btn btn-success"
                        onclick="return confirm('Convert this message to a client? This will create a new client entry.')">
                         <i class="fas fa-user-plus me-2"></i>Convert to Client
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

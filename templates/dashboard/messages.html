@@ -21,9 +21,11 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                         <a href="{{ url_for('dashboard_messages', category='all') }}" class="btn btn-outline-gold {% if not current_category or current_category == 'all' %}active{% endif %}">All</a>
                         {% if is_admin %}
                         <a href="{{ url_for('dashboard_messages', category='platform') }}" class="btn btn-outline-gold {% if current_category == 'platform' %}active{% endif %}">Platform</a>
-                        {% endif %}
+                        <a href="{{ url_for('dashboard_messages', category='internal') }}" class="btn btn-outline-gold {% if current_category == 'internal' %}active{% endif %}">Internal</a>
+                        {% else %}
                         <a href="{{ url_for('dashboard_messages', category='portfolio') }}" class="btn btn-outline-gold {% if current_category == 'portfolio' %}active{% endif %}">Portfolio</a>
                         <a href="{{ url_for('dashboard_messages', category='internal') }}" class="btn btn-outline-gold {% if current_category == 'internal' %}active{% endif %}">Internal</a>
+                        {% endif %}
                     </div>
                     <select class="form-select form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;" onchange="window.location.href='{{ url_for('dashboard_messages', category=current_category) }}&priority=' + this.value">
                         <option value="all">All Priority</option>
@@ -135,7 +137,7 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                             <span class="badge bg-primary border-light shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-university"></i> ACADEMY INQUIRY</span>
                                         {% elif message.category == 'internal' %}
                                             <span class="badge bg-info-gradient text-black border-gold shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-reply-all"></i> INTERNAL COMMUNICATION</span>
-                                        {% else %}
+                                        {% elif not is_admin %}
                                             <span class="badge bg-success border-light shadow-sm" style="font-size: 0.65rem;"><i class="fas fa-briefcase"></i> PORTFOLIO DIRECT</span>
                                         {% endif %}
                                         <small class="text-muted fw-bold" style="font-size: 0.7rem;">{{ message.interest_area or 'General' }}</small>
@@ -181,16 +183,6 @@ endblock %} {% block page_title %}Messages{% endblock %} {% block content %}
                                         >
                                             <i class="fas fa-comments me-1"></i> Open
                                         </a>
-                                        {% if is_admin %}
-                                        <a
-                                            href="{{ url_for('dashboard_convert_message_to_client', message_id=message.id) }}"
-                                            class="btn btn-success btn-sm"
-                                            onclick="return confirm('Convert this lead to CRM?')"
-                                            title="Convert to Client"
-                                        >
-                                            <i class="fas fa-user-plus"></i>
-                                        </a>
-                                        {% endif %}
                                         <a
                                             href="{{ url_for('dashboard_delete_message', message_id=message.id) }}"
                                             class="btn btn-outline-danger btn-sm"

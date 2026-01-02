@@ -994,23 +994,61 @@ def save_message(name,
 
 
 def get_unread_messages_count():
-    """Get count of unread messages from both JSON and Database"""
-    username = session.get('username')
-    user_id = session.get('user_id')
-    
-    count = 0
-    # 1. JSON messages
-    data = load_data(username=username)
-    count += len([m for m in data.get('messages', []) if not m.get('read', False)])
-    
-    # 2. DB messages
-    if user_id:
-        try:
-            db_count = Message.query.filter_by(receiver_id=str(user_id), is_read=False).count()
-            count += db_count
-        except: pass
+    """Count unread messages for the current user or platform inquiries for admin"""
+    try:
+        user_id = session.get('user_id')
+        is_admin = session.get('is_admin', False)
         
-    return count
+        if is_admin:
+            # For admin, count only Academy Inquiries (platform) and internal messages
+            return Message.query.filter(
+                Message.is_read == False,
+                Message.category.in_(['platform', 'internal'])
+            ).count()
+        elif user_id:
+            # For portfolio users, count messages where they are the receiver
+            return Message.query.filter_by(
+                receiver_id=str(user_id),
+                is_read=False
+            ).count()
+        return 0
+    except Exception as e:
+        app.logger.error(f"Error counting messages: {str(e)}")
+        return 0
+
+@app.route('/dashboard/notifications/latest')
+def get_latest_notifications():
+    """Fetch latest unread notifications for polling"""
+    try:
+        user_id = session.get('user_id')
+        is_admin = session.get('is_admin', False)
+        
+        if is_admin:
+            unread_messages = Message.query.filter(
+                Message.is_read == False,
+                Message.category.in_(['platform', 'internal'])
+            ).order_by(Message.created_at.desc()).limit(5).all()
+        elif user_id:
+            unread_messages = Message.query.filter_by(
+                receiver_id=str(user_id),
+                is_read=False
+            ).order_by(Message.created_at.desc()).limit(5).all()
+        else:
+            return jsonify([])
+
+        notifications = []
+        for msg in unread_messages:
+            notifications.append({
+                'id': msg.id,
+                'name': msg.name,
+                'message': msg.message[:50] + '...' if len(msg.message) > 50 else msg.message,
+                'category': msg.category,
+                'time': msg.created_at.strftime('%H:%M')
+            })
+        return jsonify(notifications)
+    except Exception as e:
+        app.logger.error(f"Notification error: {str(e)}")
+        return jsonify([])
 
 
 def track_visitor(username=None):
@@ -1493,49 +1531,84 @@ def contact():
             flash('Too many requests.', 'danger')
             return redirect(request.referrer or url_for('index'))
 
+        # Capture form fields
         name = request.form.get('name')
         email = request.form.get('email')
         message_content = request.form.get('message')
         portfolio_owner = request.form.get('portfolio_owner') 
+        
+        # Additional fields from portfolio form
         request_type = request.form.get('request_type', 'General Inquiry')
         interest_area = request.form.get('interest_area', 'General')
+        seriousness = request.form.get('seriousness', 'n/a')
+        contact_pref = request.form.get('contact_pref', 'n/a')
+        company = request.form.get('company', '')
+        phone = request.form.get('phone', '')
 
         if not all([name, email, message_content, portfolio_owner]):
             flash('Required fields missing.', 'danger')
             return redirect(request.referrer or url_for('index'))
 
-        # Find target user
-        target_user = User.query.filter_by(username=portfolio_owner).first()
-        
+        # SEPARATION LOGIC: Completely distinct systems for Platform vs Portfolio
+        if portfolio_owner == 'admin':
+            # PLATFORM CONTACT (Admin Inbox)
+            category = 'platform'
+            target_id = 'admin'
+            workspace_id = None
+            
+            enhanced_msg = f"Platform Inquiry\n"
+            if company: enhanced_msg += f"Company: {company}\n"
+            enhanced_msg += f"\nMessage: {message_content}"
+        else:
+            # PORTFOLIO CONTACT (User Inbox)
+            target_user = User.query.filter_by(username=portfolio_owner).first()
+            if not target_user:
+                flash('Portfolio owner not found.', 'danger')
+                return redirect(request.referrer or url_for('index'))
+                
+            category = 'portfolio'
+            target_id = str(target_user.id)
+            workspace_id = target_user.workspace_id
+            
+            # Aggregate portfolio form fields into message body
+            enhanced_msg = f"Request Type: {request_type}\n"
+            enhanced_msg += f"Interest Area: {interest_area}\n"
+            if company: enhanced_msg += f"Company: {company}\n"
+            enhanced_msg += f"Seriousness: {seriousness}\n"
+            enhanced_msg += f"Preferred Contact: {contact_pref}\n"
+            if phone: enhanced_msg += f"Phone: {phone}\n"
+            enhanced_msg += f"\nMessage: {message_content}"
+
         new_msg = Message(
             id=str(uuid.uuid4()),
+            workspace_id=workspace_id,
             name=name,
             email=email,
-            message=message_content,
+            message=enhanced_msg,
             is_internal=False,
             sender_role='visitor',
-            category='portfolio',
-            receiver_id=target_user.id if target_user else None,
+            category=category,
+            receiver_id=target_id,
             created_at=datetime.utcnow()
         )
         db.session.add(new_msg)
         db.session.commit()
 
-        # Update JSON only for portfolio owner view (Legacy)
+        # Update JSON only for portfolio owner view (Legacy Support)
         user_data = load_data(username=portfolio_owner)
         if 'messages' not in user_data: user_data['messages'] = []
         user_data['messages'].append({
             'id': new_msg.id,
             'name': name,
             'email': email,
-            'message': message_content,
+            'message': enhanced_msg,
             'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'read': False,
-            'category': 'portfolio'
+            'category': category
         })
         save_data(user_data, username=portfolio_owner)
 
-        log_ip_activity('portfolio_contact', f'To: {portfolio_owner}')
+        log_ip_activity('platform_contact' if portfolio_owner == 'admin' else 'portfolio_contact', f'To: {portfolio_owner}')
         flash('Your message has been delivered.', 'success')
         
     except Exception as e:
@@ -2540,11 +2613,16 @@ def dashboard_messages():
     try:
         if is_admin:
             # Admin sees platform messages or portfolio messages directed to 'admin'
-            if category == 'platform':
+            if category == 'all':
+                db_messages = Message.query.filter(
+                    Message.parent_id == None,
+                    Message.category.in_(['platform', 'internal'])
+                ).order_by(Message.created_at.desc()).all()
+            elif category == 'platform':
                 db_messages = Message.query.filter_by(category='platform', parent_id=None).order_by(Message.created_at.desc()).all()
             elif category == 'internal':
                 db_messages = Message.query.filter_by(category='internal', parent_id=None).order_by(Message.created_at.desc()).all()
-            else: # portfolio
+            else: # portfolio (legacy support)
                 db_messages = Message.query.filter_by(category='portfolio', parent_id=None, receiver_id=user_id).order_by(Message.created_at.desc()).all()
         else:
             # Regular user only sees messages belonging to their portfolio category or internal
