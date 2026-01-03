@@ -385,6 +385,10 @@
                     <i class="fas fa-sliders-h"></i>
                     <span>Global Settings</span>
                 </a>
+                <a href="{{ url_for('dashboard_change_password') }}" class="nav-link {% if request.endpoint == 'dashboard_change_password' %}active{% endif %}">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
                 <a href="{{ url_for('access_instructions') }}" class="nav-link {% if request.endpoint == 'access_instructions' %}active{% endif %}">
                     <i class="fas fa-shield-alt"></i>
                     <span>Access Standards</span>

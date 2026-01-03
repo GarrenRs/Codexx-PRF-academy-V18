@@ -80,3 +80,8 @@ requests
 sqlalchemy
 weasyprint
 werkzeug
+alembic
+apscheduler
+python-dotenv
+requests
+sqlalchemy
