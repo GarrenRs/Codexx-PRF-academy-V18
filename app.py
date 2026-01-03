@@ -25,369 +25,3395 @@ app = Flask(__name__)
 conf = get_config()
 app.config.from_object(conf)
 
+# Ensure database URL is correctly formatted for SQLAlchemy
+db_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+if db_url and db_url.startswith("postgres://"):
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
+        "postgres://", "postgresql://", 1)
+
 db.init_app(app)
 
 with app.app_context():
     try:
         db.create_all()
+        # Verify connection
         db.session.execute(text('SELECT 1'))
+        app.logger.info("Database connection verified successfully.")
     except Exception as e:
-        print(f"DB Error: {e}")
+        app.logger.error(f"Database initialization error: {str(e)}")
+
 
 def get_current_theme():
+    """Helper to get current user's theme for dashboard"""
     username = session.get('username')
-    if not username: return 'luxury-gold'
+    if not username:
+        return 'luxury-gold'
     user_data = load_data(username=username)
     return user_data.get('settings', {}).get('theme', 'luxury-gold')
 
+
 @app.context_processor
 def inject_global_vars():
+    """Consolidated professional context processor for all templates"""
     username = session.get('username')
-    is_logged_in = 'admin_logged_in' in session
+    current_theme = get_current_theme()
+    is_demo_mode = session.get('is_demo_mode', True)
+    is_admin = session.get('is_admin', False)
     
-    def get_unread_messages_count():
-        if not is_logged_in or not username:
-            return 0
-        return Message.query.filter_by(receiver_id=session.get('user_id'), is_read=False).count()
+    # Load admin social links strictly for the main platform footer
+    admin_data = load_data(username='admin')
+    admin_social = admin_data.get('social', {})
 
-    return {
-        'current_theme': get_current_theme(),
-        'is_demo_mode': session.get('is_demo_mode', False),
-        'is_admin': session.get('is_admin', False),
-        'is_logged_in': is_logged_in,
-        'username': username,
-        'current_year': datetime.now().year,
-        'get_unread_messages_count': get_unread_messages_count
+    # Default Meta Tags for SEO
+    default_meta = {
+        'title': 'Codexx Academy | Elite Proof-of-Work Ecosystem',
+        'description': 'The premier ecosystem for verified professionals. Build in silence, show in public.',
+        'keywords': 'Codexx Academy, Proof of Work, Elite Professionals, Portfolio Ecosystem'
     }
 
-ADMIN_CREDENTIALS = {
-    'username': os.environ.get('ADMIN_USERNAME', 'admin'),
-    'password_hash': generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'Codexx@123456'))
+    return {
+        'current_theme': current_theme,
+        'is_demo_mode': is_demo_mode,
+        'is_admin': is_admin,
+        'username': username,
+        'current_year': datetime.now().year,
+        'admin_social': admin_social,
+        'default_meta': default_meta,
+        'get_unread_messages_count': get_unread_messages_count,
+        'get_visitor_count': get_visitor_count,
+        'get_clients_stats': lambda: get_clients_stats(username)
+    }
+
+
+# Configuration
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = 'static/assets/uploads'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['JSON_AS_ASCII'] = False
+app.config['SESSION_COOKIE_SECURE'] = False  # Changed for development in Replit
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+# Security Configuration - Load from environment variables
+def get_admin_credentials():
+    """Load admin credentials from environment variables safely"""
+    return {
+        'username':
+        os.environ.get('ADMIN_USERNAME', 'admin'),
+        'password_hash':
+        generate_password_hash(
+            os.environ.get('ADMIN_PASSWORD', 'Codexx@123456'))
+    }
+
+
+ADMIN_CREDENTIALS = get_admin_credentials()
+
+# Create upload directory
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs('backups', exist_ok=True)
+
+# Initialize APScheduler for automatic backups
+scheduler = BackgroundScheduler()
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
+
+# Advanced Security System
+# Rate Limiting: Track requests per IP
+RATE_LIMIT_REQUESTS = {}  # {ip: [(timestamp, endpoint), ...]}
+RATE_LIMIT_MAX_REQUESTS = 10  # Max 10 requests
+RATE_LIMIT_WINDOW = 60  # Per 60 seconds
+
+# IP Logging for security tracking
+IP_LOG_FILE = 'security/ip_log.json'
+os.makedirs('security', exist_ok=True)
+
+
+def get_client_ip():
+    """Get real client IP address"""
+    return request.environ.get('HTTP_X_FORWARDED_FOR',
+                               request.environ.get('REMOTE_ADDR', 'unknown'))
+
+
+def check_rate_limit(endpoint='contact'):
+    """Check if IP is within rate limit"""
+    client_ip = get_client_ip()
+    current_time = time.time()
+
+    if client_ip not in RATE_LIMIT_REQUESTS:
+        RATE_LIMIT_REQUESTS[client_ip] = []
+
+    # Clean old requests outside the window
+    RATE_LIMIT_REQUESTS[client_ip] = [
+        (ts, ep) for ts, ep in RATE_LIMIT_REQUESTS[client_ip]
+        if current_time - ts < RATE_LIMIT_WINDOW
+    ]
+
+    # Check if limit exceeded
+    endpoint_requests = [
+        ep for ts, ep in RATE_LIMIT_REQUESTS[client_ip] if ep == endpoint
+    ]
+    if len(endpoint_requests) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+
+    # Add current request
+    RATE_LIMIT_REQUESTS[client_ip].append((current_time, endpoint))
+    return True
+
+
+def log_ip_activity(activity_type, details=''):
+    """Log IP activity for security tracking"""
+    try:
+        client_ip = get_client_ip()
+        log_data = {
+            'ip': client_ip,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'activity': activity_type,
+            'details': details,
+            'user_agent': request.headers.get('User-Agent', 'Unknown')[:100]
+        }
+
+        # Load existing logs
+        try:
+            with open(IP_LOG_FILE, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            logs = []
+
+        logs.append(log_data)
+
+        # Keep only last 1000 logs
+        logs = logs[-1000:]
+
+        with open(IP_LOG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error logging IP activity: {str(e)}")
+
+
+# LIVE DEMO EDITION: Demo user credentials (restricted access for live preview)
+DEMO_USER_CREDENTIALS = {
+    'username': 'demo_codexx',
+    'password_hash': generate_password_hash('Demo_2026!'),
+    'is_demo': True
 }
 
+
+# Telegram Bot Configuration helper functions
+def load_telegram_config():
+    """Load global Telegram configuration from environment variables only"""
+    return os.environ.get('TELEGRAM_BOT_TOKEN',
+                          ''), os.environ.get('TELEGRAM_CHAT_ID', '')
+
+
+def get_telegram_credentials(username=None):
+    """Get Telegram credentials - user-specific or global fallback"""
+    if username:
+        # Get user-specific credentials from their data
+        try:
+            user_data = load_data(username=username)
+            if 'notifications' in user_data and 'telegram' in user_data[
+                    'notifications']:
+                telegram_cfg = user_data['notifications']['telegram']
+                bot_token = telegram_cfg.get('bot_token', '')
+                chat_id = telegram_cfg.get('chat_id', '')
+                if bot_token and chat_id:
+                    return bot_token, chat_id
+        except:
+            pass
+
+    # Fall back to global config
+    bot_token, chat_id = load_telegram_config()
+    return bot_token, chat_id
+
+
+# Telegram Bot Configuration - loaded at startup
+TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID = get_telegram_credentials()
+TELEGRAM_ENABLED = bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)
+
+
+# SMTP Email Configuration helper functions
+def load_smtp_config(username=None):
+    """Load SMTP configuration - user-specific or global"""
+    # Try to load user-specific config first
+    if username:
+        try:
+            user_data = load_data(username=username)
+            if 'notifications' in user_data and 'smtp' in user_data[
+                    'notifications']:
+                smtp_cfg = user_data['notifications']['smtp']
+                if all([
+                        smtp_cfg.get('host'),
+                        smtp_cfg.get('email'),
+                        smtp_cfg.get('password')
+                ]):
+                    return smtp_cfg
+        except:
+            pass
+
+    # Fall back to global SMTP config
+    try:
+        if os.path.exists('smtp_config.json'):
+            with open('smtp_config.json', 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config
+    except (FileNotFoundError, json.JSONDecodeError, IOError) as e:
+        app.logger.debug(f"Could not load SMTP config: {str(e)}")
+    return {}
+
+
+def save_smtp_config(config):
+    """Save SMTP configuration to file"""
+    try:
+        with open('smtp_config.json', 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        app.logger.error(f"Error saving SMTP config: {str(e)}")
+        return False
+
+
+def send_email(recipient, subject, body, html=False, username=None):
+    """Send email using SMTP - user-specific or global config"""
+    try:
+        smtp_config = load_smtp_config(username=username)
+        if not all([
+                smtp_config.get('host'),
+                smtp_config.get('port'),
+                smtp_config.get('email'),
+                smtp_config.get('password')
+        ]):
+            return False
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = smtp_config.get('email')
+        msg['To'] = recipient
+
+        if html:
+            msg.attach(MIMEText(body, 'html'))
+        else:
+            msg.attach(MIMEText(body, 'plain'))
+
+        with smtplib.SMTP(smtp_config.get('host'),
+                          int(smtp_config.get('port'))) as server:
+            server.starttls()
+            server.login(smtp_config.get('email'), smtp_config.get('password'))
+            server.send_message(msg)
+
+        return True
+    except Exception as e:
+        app.logger.error(f"Error sending email: {str(e)}")
+        return False
+
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit(
+        '.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+
+def load_data(username=None):
+    """Load portfolio data for a specific user or global data"""
+    try:
+        data = {}
+        if os.path.exists('data.json'):
+            with open('data.json', 'r', encoding='utf-8') as file:
+                data = json.load(file)
+
+        # If a username is provided, isolate their portfolio data
+        if username:
+            portfolios = data.get('portfolios', {})
+            if username in portfolios:
+                return portfolios[username]
+            else:
+                # Return default template for user if not exists
+                return {
+                    'name': username,
+                    'title': 'Web Developer & Designer',
+                    'description': 'Welcome to my professional portfolio.',
+                    'skills': [],
+                    'projects': [],
+                    'messages': [],
+                    'clients': [],
+                    'settings': {
+                        'theme': 'luxury-gold'
+                    },
+                    'visitors': {
+                        'total': 0,
+                        'today': [],
+                        'unique_ips': []
+                    }
+                }
+        return data
+    except Exception as e:
+        app.logger.error(f"Error loading data: {str(e)}")
+        return {}
+
+
+def save_data(user_data, username=None):
+    """Save portfolio data with multi-tenant isolation"""
+    try:
+        # Always load the full database first
+        all_data = {}
+        if os.path.exists('data.json'):
+            with open('data.json', 'r', encoding='utf-8') as file:
+                all_data = json.load(file)
+
+        if username:
+            # Isolate this user's data under their username key
+            if 'portfolios' not in all_data:
+                all_data['portfolios'] = {}
+            all_data['portfolios'][username] = user_data
+        else:
+            # If no username, we are saving global data (users list, etc)
+            all_data.update(user_data)
+
+        with open('data.json', 'w', encoding='utf-8') as file:
+            json.dump(all_data, file, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving data: {str(e)}")
+
+
+@app.route('/portfolio/<username>')
+def user_portfolio(username):
+    """Public view of a specific user's portfolio with theme isolation"""
+    user_data = load_data(username=username)
+    # Check if user exists in main data
+    all_data = load_data()
+    users = all_data.get('users', [])
+    
+    user_entry = next((u for u in users if u['username'] == username), None)
+    if not user_entry and username != 'admin':
+        return render_template('404.html'), 404
+
+    # Inject actual verification status from users list
+    if user_entry:
+        user_data['is_verified'] = user_entry.get('is_verified', False)
+        user_data['username'] = username
+    elif username == 'admin':
+        user_data['is_verified'] = True
+        user_data['username'] = 'admin'
+
+    # Check if user is an admin - if so, redirect to home page as requested
+    is_admin_user = (user_entry and user_entry.get('role') == 'admin') or username == 'admin'
+    if is_admin_user:
+        return redirect(url_for('landing'))
+
+    track_visitor(username=username)
+    # Theme isolation: read theme from user settings, fallback to default
+    current_theme = user_data.get('settings', {}).get('theme', 'luxury-gold')
+    return render_template('index.html',
+                           data=user_data,
+                           is_public=True,
+                           current_theme=current_theme)
+
+
+def create_backup(manual=True):
+    """Create a backup of data.json to backups folder"""
+    try:
+        if not os.path.exists('data.json'):
+            return None
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f'backup_{timestamp}.json'
+        backup_path = os.path.join('backups', backup_filename)
+
+        with open('data.json', 'r', encoding='utf-8') as original:
+            backup_content = original.read()
+            with open(backup_path, 'w', encoding='utf-8') as backup:
+                backup.write(backup_content)
+
+        file_size = os.path.getsize(backup_path) / 1024
+
+        backup_info = {
+            'filename': backup_filename,
+            'timestamp': datetime.now().isoformat(),
+            'size_kb': round(file_size, 2),
+            'type': 'manual' if manual else 'automatic'
+        }
+
+        save_backup_metadata(backup_info)
+
+        keep_recent_backups(max_backups=20)
+
+        return backup_info
+    except Exception as e:
+        app.logger.error(f"Error creating backup: {str(e)}")
+        return None
+
+
+def save_backup_metadata(backup_info):
+    """Save backup metadata to JSON file"""
+    try:
+        metadata_file = 'backups/backups.json'
+        backups_list = []
+
+        if os.path.exists(metadata_file):
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                backups_list = json.load(f)
+
+        backups_list.append(backup_info)
+
+        with open(metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(backups_list, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error saving backup metadata: {str(e)}")
+
+
+def get_backups_list():
+    """Get list of all backups with metadata"""
+    try:
+        metadata_file = 'backups/backups.json'
+        if os.path.exists(metadata_file):
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                backups = json.load(f)
+                return sorted(backups,
+                              key=lambda x: x['timestamp'],
+                              reverse=True)
+        return []
+    except Exception as e:
+        app.logger.error(f"Error reading backups list: {str(e)}")
+        return []
+
+
+def keep_recent_backups(max_backups=20):
+    """Keep only the most recent backups"""
+    try:
+        backups = get_backups_list()
+        if len(backups) > max_backups:
+            to_delete = backups[max_backups:]
+            for backup in to_delete:
+                backup_path = os.path.join('backups', backup['filename'])
+                if os.path.exists(backup_path):
+                    os.remove(backup_path)
+
+            updated_backups = backups[:max_backups]
+            with open('backups/backups.json', 'w', encoding='utf-8') as f:
+                json.dump(updated_backups, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"Error cleaning old backups: {str(e)}")
+
+
+def scheduled_backup():
+    """Scheduled backup job"""
+    try:
+        with app.app_context():
+            create_backup(manual=False)
+            app.logger.info("Scheduled backup created successfully")
+    except Exception as e:
+        app.logger.error(f"Scheduled backup failed: {str(e)}")
+
+
+def reset_demo_data():
+    """Reset demo data to default state for Live Demo Edition"""
+    try:
+        with app.app_context():
+            default_demo_data = {
+                'name':
+                'Demo Portfolio - Codexx',
+                'title':
+                'Web Developer & Designer',
+                'description':
+                'Experience the power of Codexx Academy Platform with this interactive demo',
+                'photo':
+                'static/assets/profile-placeholder.svg',
+                'about':
+                'Welcome to the Codexx Academy Platform! This is a live demo showcasing all the features available in our professional portfolio management system. Feel free to explore and customize this demo to see how your portfolio would look.',
+                'skills': [{
+                    'name': 'Web Development',
+                    'level': 90
+                }, {
+                    'name': 'UI/UX Design',
+                    'level': 85
+                }, {
+                    'name': 'JavaScript',
+                    'level': 88
+                }, {
+                    'name': 'React.js',
+                    'level': 85
+                }, {
+                    'name': 'Python',
+                    'level': 80
+                }],
+                'projects':
+                load_data().get('projects', []),
+                'contact': {
+                    'email': 'demo@codexx.com',
+                    'phone': '+1 234 567 8900',
+                    'location': 'San Francisco, CA'
+                },
+                'social': {},
+                'messages': [],
+                'visitors': {
+                    'total': 0,
+                    'today': [],
+                    'unique_ips': []
+                },
+                'settings': {
+                    'theme': 'luxury-gold'
+                },
+                'clients': []
+            }
+            with open('data.json', 'w', encoding='utf-8') as f:
+                json.dump(default_demo_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"Demo data reset failed: {str(e)}")
+
+
+scheduler.add_job(scheduled_backup,
+                  'cron',
+                  hour='*',
+                  minute=0,
+                  id='daily_backup',
+                  name='Hourly backup',
+                  replace_existing=True)
+
+scheduler.add_job(reset_demo_data,
+                  'cron',
+                  hour='*',
+                  minute=0,
+                  id='demo_reset',
+                  name='Demo data hourly reset',
+                  replace_existing=True)
+
+
 def login_required(f):
+    """Decorator to require login"""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'admin_logged_in' not in session:
+            flash('Please login to access this page.', 'error')
             return redirect(url_for('dashboard_login'))
         return f(*args, **kwargs)
+
     return decorated_function
 
-def disable_in_demo(f):
+
+def admin_required(f):
+    """Decorator to require admin role"""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('is_demo_mode'):
-            flash('Action disabled in demo mode', 'warning')
-            return redirect(request.referrer or url_for('dashboard'))
+        if not session.get('is_admin'):
+            flash('Admin access required.', 'error')
+            return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
+
     return decorated_function
 
-def load_data(username=None):
-    if os.path.exists('data.json'):
-        with open('data.json', 'r') as f: return json.load(f)
-    return {}
 
-@app.route('/')
-def landing():
-    # Load portfolio data from data.json or database
-    portfolios = {}
-    if os.path.exists('data.json'):
-        try:
-            with open('data.json', 'r') as f:
-                portfolios = json.load(f)
-        except Exception as e:
-            print(f"Error loading data.json: {e}")
+def disable_in_demo(f):
+    """Decorator to disable actions in demo mode with specific endpoint rules"""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Refresh session data from data.json if user is logged in
+        if 'admin_logged_in' in session and session.get('user_id'):
+            try:
+                data = load_data()
+                users = data.get('users', [])
+                for user in users:
+                    if user.get('id') == session.get('user_id'):
+                        # Update session with latest status from database (data.json)
+                        session['is_demo_mode'] = user.get('is_demo', True)
+                        session['is_admin'] = (user.get('role') == 'admin')
+                        break
+            except Exception as e:
+                app.logger.error(f"Error refreshing session: {str(e)}")
+
+        if session.get('is_demo_mode'):
+            # FULL CONTROL endpoints (Allowed for both GET and POST)
+            allowed_endpoints = [
+                'dashboard',
+                'dashboard_general',
+                'dashboard_about',
+                'dashboard_skills',
+                'dashboard_projects',
+                'dashboard_add_project',
+                'dashboard_edit_project',
+                'dashboard_delete_project',
+                'dashboard_contact',
+                'dashboard_messages',
+                'dashboard_view_message',
+                'dashboard_mark_read',
+                'dashboard_delete_message',
+                'dashboard_change_password',
+                'dashboard_users'  # Allow viewing users in demo mode, but POST is blocked by logic
+            ]
+
+            # BLOCKED endpoints (Blocked even for GET if they are sensitive)
+            # Or restricted to GET only for others
+            restricted_endpoints = [
+                'dashboard_social', 'dashboard_clients',
+                'dashboard_add_client', 'dashboard_edit_client',
+                'dashboard_view_client', 'dashboard_delete_client',
+                'dashboard_settings', 'dashboard_smtp', 'dashboard_telegram',
+                'view_backups', 'create_manual_backup', 'download_backup',
+                'delete_backup', 'export_data', 'toggle_user_demo'
+            ]
+
+            current_endpoint = request.endpoint
+
+            if current_endpoint in restricted_endpoints and request.method == 'POST':
+                flash(
+                    '⚠️ Pro feature: This action requires a professional plan.',
+                    'warning')
+                return redirect(request.referrer or url_for('dashboard'))
+
+            # Extra security: prevent users from reaching sensitive admin settings even on GET
+            sensitive_get_endpoints = [
+                'dashboard_smtp', 'dashboard_telegram', 'view_backups'
+            ]
+            if current_endpoint in sensitive_get_endpoints:
+                flash('⚠️ Pro feature: Access restricted in demo mode.',
+                      'warning')
+                return redirect(url_for('dashboard'))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+# Registration route removed - New accounts are managed by admin via User Directory
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Disabled registration route"""
+    flash(
+        'Registration is currently disabled. Please contact the administrator.',
+        'warning')
+    return redirect(url_for('login'))
+
+
+@app.route('/dashboard/users')
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_users():
+    """Manage users and permissions (Admin only)"""
+    data = load_data()
+    users = data.get('users', [])
+    return render_template('dashboard/users.html', users=users)
+
+
+@app.route('/dashboard/user/<int:user_id>')
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_view_user(user_id):
+    """View detailed information about a specific user"""
+    data = load_data()
+    users = data.get('users', [])
+    target_user = next((u for u in users if u.get('id') == user_id), None)
+
+    if not target_user:
+        flash('User not found.', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Load user's portfolio data for stats
+    username = target_user['username']
+    user_portfolio_data = load_data(username=username)
+
+    stats = {
+        'projects_count': len(user_portfolio_data.get('projects', [])),
+        'skills_count': len(user_portfolio_data.get('skills', [])),
+        'clients_count': len(user_portfolio_data.get('clients', [])),
+        'messages_count': len(user_portfolio_data.get('messages', [])),
+        'visitors_total': user_portfolio_data.get('visitors',
+                                                  {}).get('total', 0)
+    }
+
+    return render_template('dashboard/view_user.html',
+                           target_user=target_user,
+                           stats=stats,
+                           is_verified=target_user.get('is_verified', False))
+
+
+@app.route('/dashboard/access-instructions')
+@login_required
+def access_instructions():
+    """Show terms of use and how to get Full Access/Verified Badge"""
+    return render_template('dashboard/access_instructions.html')
+
+
+@app.route('/dashboard/users/toggle-verification/<user_id>', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_toggle_user_verification(user_id):
+    """Toggle user's verified status with criteria check"""
+    try:
+        data = load_data()
+        users = data.get('users', [])
+        target_user = None
+        for u in users:
+            if str(u.get('id')) == str(user_id):
+                target_user = u
+                break
+        
+        if not target_user:
+            flash('User not found.', 'error')
+            return redirect(url_for('dashboard_users'))
+
+        # Check criteria only when enabling
+        if not target_user.get('is_verified', False):
+            # Conditions: Full Access (is_demo is False) AND at least 3 projects
+            user_portfolio_data = load_data(username=target_user['username'])
+            projects_count = len(user_portfolio_data.get('projects', []))
+            is_full_access = not target_user.get('is_demo', True)
+
+            if not is_full_access or projects_count < 3:
+                flash(f'Criteria not met: Full Access and 3 projects required. (Current: {"Full Access" if is_full_access else "Demo"}, {projects_count} projects)', 'warning')
+                return redirect(url_for('dashboard_view_user', user_id=user_id))
+            
+            target_user['is_verified'] = True
+            flash('Verification Badge enabled successfully! Portfolio now visible in the main gallery.', 'success')
+        else:
+            target_user['is_verified'] = False
+            flash('Verification Badge disabled.', 'info')
+
+        save_data(data)
+        
+        # Sync with Database
+        user_obj = db.session.get(User, str(user_id))
+        if user_obj:
+            user_obj.is_verified = target_user['is_verified']
+            db.session.commit()
+            
+        return redirect(url_for('dashboard_view_user', user_id=user_id))
+    except Exception as e:
+        app.logger.error(f"Error toggling verification: {str(e)}")
+        flash('An error occurred while updating verification status.', 'error')
+        return redirect(url_for('dashboard_users'))
+
+
+@app.route('/dashboard/user/<int:user_id>/toggle-demo', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def toggle_user_demo(user_id):
+    """Toggle demo mode for a specific user"""
+    data = load_data()
+    users = data.get('users', [])
+
+    for user in users:
+        if user.get('id') == user_id:
+            user['is_demo'] = not user.get('is_demo', True)
+            flash(f'User {user["username"]} access updated.', 'success')
+            break
+
+    save_data(data)
+    return redirect(url_for('dashboard_view_user', user_id=user_id))
+
+
+@app.route('/dashboard/user/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def delete_user(user_id):
+    """Delete a user and their portfolio data"""
+    data = load_data()
+    users = data.get('users', [])
+
+    target_user = next((u for u in users if u.get('id') == user_id), None)
+    if not target_user:
+        flash('User not found.', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    if target_user['username'] == 'admin':
+        flash('Cannot delete admin user.', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Remove from users list
+    data['users'] = [u for u in users if u.get('id') != user_id]
+
+    # Remove their portfolio data
+    if 'portfolios' in data and target_user['username'] in data['portfolios']:
+        del data['portfolios'][target_user['username']]
+
+    save_data(data)
+    flash(f'User {target_user["username"]} has been deleted.', 'success')
+    return redirect(url_for('dashboard_users'))
+
+
+def send_telegram_notification(message_text, username=None):
+    """Send notification to Telegram - user-specific"""
+    # Get credentials for specific user or global
+    bot_token, chat_id = get_telegram_credentials(username=username)
+    if not bot_token or not chat_id:
+        return False
+
+    try:
+        # Check if message_text is already formatted (for contact forms) or needs formatting (for client updates)
+        if isinstance(message_text, dict):
+            # Old contact form format
+            name = message_text.get('name', '')
+            email = message_text.get('email', '')
+            body = message_text.get('message', '')
+            telegram_message = f"""
+🔔 <b>New Contact Message</b>
+
+📝 <b>Name:</b> {name}
+📧 <b>Email:</b> {email}
+
+💬 <b>Message:</b>
+{body}
+
+⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+        else:
+            # New format (already formatted string for client updates)
+            telegram_message = message_text
+
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            'chat_id': chat_id,
+            'text': telegram_message,
+            'parse_mode': 'HTML'
+        }
+
+        # Send in background thread to not block the request
+        response = requests.post(url, json=payload, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        app.logger.error(f"Error sending Telegram notification: {str(e)}")
+        return False
+
+
+def send_telegram_event_notification(event_type, details=None, username=None):
+    """Send event-based notifications - per-user"""
+    bot_token, chat_id = get_telegram_credentials(username=username)
+    if not bot_token or not chat_id:
+        return False
+
+    try:
+        event_messages = {
+            'new_message':
+            f"""📨 <b>New Contact Message</b>
+{details}
+⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
+            'new_project':
+            f"""🚀 <b>New Project Added</b>
+📌 {details}
+⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
+            'project_updated':
+            f"""✏️ <b>Project Updated</b>
+📌 {details}
+⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}""",
+            'login_attempt':
+            f"""🔐 <b>Dashboard Login</b>
+👤 User: {details}
+⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
+        }
+
+        message_text = event_messages.get(event_type,
+                                          f"{event_type}: {details}")
+
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        payload = {
+            'chat_id': chat_id,
+            'text': message_text,
+            'parse_mode': 'HTML'
+        }
+
+        response = requests.post(url, json=payload, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        app.logger.error(f"Error sending event notification: {str(e)}")
+        return False
+
+
+def send_event_notification_async(event_type, details=None, username=None):
+    """Send event notification asynchronously - per-user"""
+    thread = threading.Thread(target=send_telegram_event_notification,
+                              args=(event_type, details, username))
+    thread.daemon = True
+    thread.start()
+
+
+def send_telegram_notification_async(message_text, username=None):
+    """Send Telegram notification asynchronously"""
+    bot_token, chat_id = get_telegram_credentials(username=username)
+    if bot_token and chat_id:
+        thread = threading.Thread(target=send_telegram_notification,
+                                  args=(message_text, username))
+        thread.daemon = True
+        thread.start()
+
+
+def save_message(name,
+                 email,
+                 message,
+                 username=None,
+                 priority='normal',
+                 extra_data=None):
+    """Save contact message per user and send notifications with priority"""
+    if username is None:
+        # Try to get from session, otherwise default to admin
+        username = session.get('username')
+        if not username:
+            # For public contact forms without identified user, route to admin
+            username = ADMIN_CREDENTIALS['username']
+
+    data = load_data(username=username)
+    if 'messages' not in data:
+        data['messages'] = []
+
+    message_ids = [m.get('id', 0) for m in data.get('messages', [])]
+    new_id = max(message_ids) + 1 if message_ids else 1
+
+    client_ip = get_client_ip()
+    new_message = {
+        'id': new_id,
+        'name': name,
+        'email': email,
+        'message': message,
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'read': False,
+        'ip': client_ip,
+        'recipient': username,  # Store which user received this message
+        'priority': priority,  # Add priority field (high, normal, low)
+        'category': 'general'  # Default category for future filtering
+    }
+
+    # Add extra data if provided
+    if extra_data:
+        new_message.update(extra_data)
+
+    data['messages'].append(new_message)
+    save_data(data, username=username)
+
+    # Log the activity
+    log_ip_activity('contact_message', f"From: {email} to {username}")
+
+    # Send Telegram notification to the recipient user (using their config)
+    request_type = extra_data.get('request_type',
+                                  'N/A') if extra_data else 'N/A'
+    interest_area = extra_data.get('interest_area',
+                                   'N/A') if extra_data else 'N/A'
+    company = extra_data.get('company', 'N/A') if extra_data else 'N/A'
+
+    notification_msg = f"""
+📨 <b>New Contact Message</b>
+
+📝 <b>Name:</b> {name}
+🏢 <b>Company:</b> {company}
+📧 <b>Email:</b> {email}
+🏷️ <b>Type:</b> {request_type}
+🎯 <b>Area:</b> {interest_area}
+
+💬 <b>Message:</b>
+{message}
+
+⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+    send_telegram_notification_async(notification_msg, username=username)
+
+    # Send email notification to the recipient user (using their config)
+    smtp_config = load_smtp_config(username=username)
+    if smtp_config.get('email'):
+        email_subject = f'📬 New Contact Message from {name}'
+        email_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <h2 style="color: #D4AF37;">📬 New Contact Message</h2>
+                <p><strong>Name:</strong> {name}</p>
+                <p><strong>Company:</strong> {company}</p>
+                <p><strong>Email:</strong> <a href="mailto:{email}">{email}</a></p>
+                <p><strong>Request Type:</strong> {request_type}</p>
+                <p><strong>Interest Area:</strong> {interest_area}</p>
+                <p><strong>Message:</strong></p>
+                <p style="background: #f5f5f5; padding: 10px; border-left: 4px solid #D4AF37;">
+                    {message.replace(chr(10), '<br>')}
+                </p>
+                <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                    Received at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                </p>
+            </body>
+        </html>
+        """
+        send_email(smtp_config.get('email'),
+                   email_subject,
+                   email_body,
+                   html=True,
+                   username=username)
+
+    return new_id
+
+
+def get_unread_messages_count():
+    """Count unread messages for the current user or platform inquiries for admin"""
+    try:
+        user_id = session.get('user_id')
+        is_admin = session.get('is_admin', False)
+        
+        if is_admin:
+            # For admin, count only Academy Inquiries (platform) and internal messages
+            return Message.query.filter(
+                Message.is_read == False,
+                Message.category.in_(['platform', 'internal'])
+            ).count()
+        elif user_id:
+            # For portfolio users, count messages where they are the receiver
+            return Message.query.filter_by(
+                receiver_id=str(user_id),
+                is_read=False
+            ).count()
+        return 0
+    except Exception as e:
+        app.logger.error(f"Error counting messages: {str(e)}")
+        return 0
+
+@app.route('/dashboard/notifications/latest')
+def get_latest_notifications():
+    """Fetch latest unread notifications for polling"""
+    try:
+        user_id = session.get('user_id')
+        is_admin = session.get('is_admin', False)
+        
+        if is_admin:
+            unread_messages = Message.query.filter(
+                Message.is_read == False,
+                Message.category.in_(['platform', 'internal'])
+            ).order_by(Message.created_at.desc()).limit(5).all()
+        elif user_id:
+            unread_messages = Message.query.filter_by(
+                receiver_id=str(user_id),
+                is_read=False
+            ).order_by(Message.created_at.desc()).limit(5).all()
+        else:
+            return jsonify([])
+
+        notifications = []
+        for msg in unread_messages:
+            notifications.append({
+                'id': msg.id,
+                'name': msg.name,
+                'message': msg.message[:50] + '...' if len(msg.message) > 50 else msg.message,
+                'category': msg.category,
+                'time': msg.created_at.strftime('%H:%M')
+            })
+        return jsonify(notifications)
+    except Exception as e:
+        app.logger.error(f"Notification error: {str(e)}")
+        return jsonify([])
+
+
+def track_visitor(username=None):
+    """Track visitor with per-user isolation"""
+    if username is None:
+        username = session.get('username', 'public')
+
+    # Track per user (load and save user-specific visitor data)
+    data = load_data(username=username)
+    if 'visitors' not in data:
+        data['visitors'] = {'total': 0, 'today': [], 'unique_ips': []}
+
+    visitor_ip = request.environ.get(
+        'HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    # Only count unique IPs per day
+    today_ips = [
+        v.get('ip') for v in data['visitors'].get('today', [])
+        if v.get('date') == today
+    ]
+    if visitor_ip not in today_ips:
+        data['visitors']['total'] = data['visitors'].get('total', 0) + 1
+
+    # Keep today's visitors only
+    data['visitors']['today'] = [
+        v for v in data['visitors'].get('today', []) if v.get('date') == today
+    ]
+    data['visitors']['today'].append({
+        'ip':
+        visitor_ip,
+        'timestamp':
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'date':
+        today
+    })
+
+    # Track unique IPs
+    if isinstance(data['visitors'].get('unique_ips'), list):
+        unique_ips_set = set(data['visitors']['unique_ips'])
+    else:
+        unique_ips_set = set()
+    unique_ips_set.add(visitor_ip)
+    data['visitors']['unique_ips'] = list(unique_ips_set)
+
+    save_data(data, username=username)
+
+    return data['visitors']['total']
+
+
+def get_visitor_count():
+    """Get total visitor count"""
+    data = load_data()
+    return data.get('visitors', {}).get('total', 0)
+
+
+def mark_message_as_read(message_id):
+    """Mark message as read"""
+    data = load_data()
+    for message in data.get('messages', []):
+        if message.get('id') == message_id:
+            message['read'] = True
+            break
+    save_data(data)
+
+
+def get_clients_stats(username=None):
+    """Get clients statistics for a specific user"""
+    data = load_data(username=username)
+    clients = data.get('clients', [])
+
+    total_clients = len(clients)
+    active_clients = len([c for c in clients if c.get('status') == 'active'])
+    completed_clients = len(
+        [c for c in clients if c.get('status') == 'completed'])
+    pending_clients = len([c for c in clients if c.get('status') == 'pending'])
+
+    total_revenue = sum(
+        float(c.get('price', 0)) for c in clients if c.get('price'))
+
+    return {
+        'total': total_clients,
+        'active': active_clients,
+        'completed': completed_clients,
+        'pending': pending_clients,
+        'revenue': total_revenue
+    }
+
+
+# Error handlers
+@app.route('/dashboard/chat', methods=['GET', 'POST'])
+@app.route('/dashboard/chat/<user_id>', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_chat(user_id=None):
+    """Internal chat system between users and admin"""
+    current_user_id = str(session.get('user_id'))
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+
+    # For admin, if no user_id is provided, show the user list
+    if is_admin and not user_id:
+        # Fetch all users except admin to start conversations
+        users = User.query.filter(User.username != 'admin').all()
+        return render_template('dashboard/chat_list.html', users=users)
+
+    # If a user is accessing, their user_id is always their own, unless they're admin
+    target_user_id = user_id if is_admin else current_user_id
+
+    # Internal chat routes are deprecated. Redirecting to consolidated messages.
+    return redirect(url_for('dashboard_messages'))
+
+
+@app.route('/dashboard/messages/reply/<message_id>', methods=['POST'])
+@login_required
+@disable_in_demo
+def dashboard_reply_message(message_id):
+    """Reply to a message internally (member-to-member or admin-to-visitor)"""
+    user_id = str(session.get('user_id'))
+    username = session.get('username')
+    is_admin = session.get('is_admin')
     
-    return render_template('landing.html', portfolios=portfolios)
+    content = request.form.get('reply_content')
+    category = request.form.get('category', 'portfolio') # Default to portfolio if not specified
+    
+    if not content:
+        flash('Reply content cannot be empty.', 'danger')
+        if category == 'internal':
+            return redirect(url_for('dashboard_internal_view', message_id=message_id))
+        return redirect(url_for('dashboard_view_message', message_id=message_id))
 
+    try:
+        # Check database first
+        db_msg = Message.query.get(message_id)
+        if db_msg:
+            # For internal system, sender is current user, receiver is the other participant
+            receiver_id = db_msg.sender_id if db_msg.sender_id != user_id else db_msg.receiver_id
+            
+            new_reply = Message(
+                id=str(uuid.uuid4()),
+                parent_id=str(message_id),
+                name='Admin' if is_admin else username,
+                email='admin@codexx.academy' if is_admin else session.get('email', ''),
+                message=content,
+                is_internal=True,
+                sender_id=user_id,
+                sender_role='admin' if is_admin else 'member',
+                receiver_id=receiver_id,
+                category=category,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(new_reply)
+            db.session.commit()
+            flash('Reply sent successfully.', 'success')
+            
+            if category == 'internal':
+                return redirect(url_for('dashboard_internal_view', message_id=message_id))
+            return redirect(url_for('dashboard_view_message', message_id=message_id))
+
+        # Check JSON data (Legacy Fallback)
+        users_to_check = [username, 'admin']
+        target_user = None
+        original_msg = None
+        
+        for user in users_to_check:
+            if not user: continue
+            user_data = load_data(username=user)
+            messages = user_data.get('messages', [])
+            original_msg = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
+            if original_msg:
+                target_user = user
+                break
+
+        if not original_msg:
+            flash('Original message not found.', 'danger')
+            return redirect(url_for('dashboard_messages'))
+
+        # Create a new reply message in JSON
+        new_reply = {
+            'id': str(uuid.uuid4()),
+            'parent_id': str(message_id),
+            'name': 'Codexx Admin' if is_admin else username,
+            'email': 'admin@codexx.academy' if is_admin else session.get('email', ''),
+            'message': content,
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'read': False,
+            'sender_id': user_id,
+            'category': category
+        }
+        
+        user_data = load_data(username=target_user)
+        if 'messages' not in user_data: user_data['messages'] = []
+        user_data['messages'].append(new_reply)
+        save_data(user_data, username=target_user)
+        
+        flash('Reply sent successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Reply error: {str(e)}")
+        flash('System error.', 'danger')
+
+    if category == 'internal':
+        return redirect(url_for('dashboard_internal_view', message_id=message_id))
+    return redirect(url_for('dashboard_view_message', message_id=message_id))
+    user_data['messages'].append(new_reply)
+    save_data(user_data, username=target_user)
+
+    flash('Reply sent successfully.', 'success')
+    return redirect(url_for('dashboard_view_message', message_id=message_id))
+
+
+@app.route('/contact/academy', methods=['POST'])
+def contact_academy():
+    """Public contact form for the Academy"""
+    try:
+        # Force get form data
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message_content = request.form.get('message')
+
+        # Check session
+        user_id = session.get('user_id')
+        username = session.get('username')
+        user_email = session.get('email')
+
+        # If logged in, override name and email from session
+        if user_id:
+            name = username
+            email = user_email
+
+        if not message_content:
+            flash('Please enter a message.', 'danger')
+            return redirect(url_for('index', _anchor='academy-contact'))
+
+        # Fallback for email if missing for some reason
+        if not email:
+            email = 'no-email@codexx.academy'
+
+        # 1. Save to Database
+        new_message = Message(name=name or 'Guest',
+                              email=email,
+                              message=message_content,
+                              is_internal=False,
+                              category='platform',
+                              sender_id=user_id,
+                              sender_role='member' if user_id else 'visitor',
+                              created_at=datetime.utcnow())
+        db.session.add(new_message)
+        db.session.commit()
+
+        # 2. Telegram Notification (Direct Integration)
+        tg_msg = f"🏛 *Academy Inquiry*\n\n*From:* {name}\n*Email:* {email}\n\n*Message:*\n{message_content}"
+        # Send via admin telegram settings if available
+        send_telegram_notification(tg_msg, username='admin')
+
+        # 3. Email Notification (SMTP Integration)
+        email_body = f"New inquiry from {name} ({email}):\n\n{message_content}"
+        send_email(os.environ.get('ADMIN_EMAIL', 'admin@codexx.academy'),
+                   "New Academy Inquiry",
+                   email_body,
+                   username='admin')
+
+        flash('Success! Your message has been delivered to the Academy team.',
+              'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error in contact_academy: {str(e)}")
+        flash('System error. Please try again later.', 'danger')
+
+    return redirect(url_for('index', _anchor='academy-contact'))
+
+
+@app.errorhandler(403)
+def forbidden(e):
+    """Custom 403 error page"""
+    return render_template('403.html'), 403
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Custom 404 error page"""
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    """Custom 500 error page"""
+    app.logger.error(f"Server Error: {str(e)}")
+    return render_template('500.html'), 500
+
+
+@app.errorhandler(503)
+def service_unavailable(e):
+    """Custom 503 error page"""
+    return render_template('503.html'), 503
+
+
+@app.errorhandler(413)
+def file_too_large(e):
+    """File upload too large"""
+    flash('File is too large. Maximum size is 16MB.', 'error')
+    return redirect(request.url)
+
+
+# Public routes
+@app.route('/')
+def index():
+    """Home/Landing page with Academy branding and user portfolios"""
+    is_logged_in = 'admin_logged_in' in session
+    username = session.get('username')
+    data = load_data()
+    portfolios = data.get('portfolios', {})
+    users = data.get('users', [])
+    
+    # Map verification status from user list to portfolios
+    user_verify_map = {u['username']: u.get('is_verified', False) for u in users}
+    for uname, port in portfolios.items():
+        port['is_verified'] = user_verify_map.get(uname, False)
+    
+    # Get social links for the footer
+    admin_data = load_data(username='admin')
+    social_links = admin_data.get('social', {})
+    
+    # Also check global config as fallback
+    if not social_links:
+        from config import get_config
+        conf = get_config()
+        # You might have global social links in config too
+
+    return render_template('landing.html',
+                           portfolios=portfolios,
+                           is_logged_in=is_logged_in,
+                           username=username,
+                           social=social_links,
+                           is_admin=session.get('is_admin', False),
+                           data=data)
+
+
+@app.route('/landing')
+def landing():
+    """Redirect to main index for consistency"""
+    return redirect(url_for('index'))
+
+
+@app.route('/verification')
+def verification():
+    """Professional Verification Standard page"""
+    return render_template('pages/verification.html')
+
+
+@app.route('/privacy')
+def privacy():
+    """Privacy Policy page"""
+    return render_template('pages/privacy.html')
+
+
+@app.route('/terms')
+def terms():
+    """Terms of Service page"""
+    return render_template('pages/terms.html')
+
+
+@app.route('/about')
+def about():
+    """About Academy page"""
+    return render_template('pages/about.html')
+
+
+@app.route('/mastery')
+def mastery():
+    """Mastery Guide page"""
+    return render_template('pages/mastery.html')
+
+
+@app.route('/standards')
+def standards():
+    """Elite Standards page"""
+    return render_template('pages/standards.html')
+
+
+@app.route('/security-audit')
+def security_audit():
+    """Security Audit page"""
+    return render_template('pages/security.html')
+
+
+@app.route('/catalog')
+def catalog():
+    """Public portfolios directory with status classification"""
+    data = load_data()
+    portfolios = data.get('portfolios', {})
+    users = data.get('users', [])
+
+    # Map user roles/demo status to classify portfolios
+    user_status_map = {u['username']: u for u in users}
+
+    classified_portfolios = {}
+    for username, port in portfolios.items():
+        # Skip admin from catalog as they don't have a portfolio
+        if username == 'admin':
+            continue
+
+        user_info = user_status_map.get(username, {})
+        is_demo = user_info.get('is_demo', True)
+        is_verified = user_info.get('is_verified', False)
+
+        # Only include verified users in catalog for visitors
+        if not is_verified and not session.get('admin_logged_in'):
+            continue
+
+        if username == 'admin':
+            status = 'verified'
+        elif is_verified:
+            status = 'verified'
+        elif not is_demo:
+            status = 'verified'
+        else:
+            # For demo users, determine if new or building
+            has_projects = len(port.get('projects', [])) > 0
+            status = 'in-progress' if has_projects else 'new'
+
+        classified_portfolios[username] = {'data': port, 'status': status}
+
+    return render_template('catalog.html',
+                           portfolios=classified_portfolios,
+                           users_list=users,
+                           is_public=True)
+
+
+def send_confirmation_email(name, email, portfolio_owner_email):
+    """Send confirmation email to visitor"""
+    try:
+        subject = "Message Received - We'll Be In Touch Soon"
+        html_body = f"""
+        <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div style="background: white; padding: 40px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2 style="color: #333; margin: 0; font-size: 28px;">✓ Message Received</h2>
+                </div>
+                
+                <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Hello <strong>{name}</strong>,
+                </p>
+                
+                <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Thank you for reaching out! We've received your message and appreciate you taking the time to contact us.
+                </p>
+                
+                <div style="background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0; border-radius: 5px;">
+                    <p style="color: #666; font-size: 14px; margin: 0;">
+                        <strong>What happens next?</strong><br>
+                        Our team will review your message and get back to you as soon as possible at <strong>{email}</strong>. We typically respond within 24 hours.
+                    </p>
+                </div>
+                
+                <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+                    If you have any additional information to add, feel free to reply to this email directly.
+                </p>
+                
+                <div style="text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <p style="color: #999; font-size: 12px; margin: 0;">
+                        © 2026 Codexx. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+        """
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = portfolio_owner_email or 'noreply@codexx.com'
+        msg['To'] = email
+        msg.attach(MIMEText(html_body, 'html'))
+
+        # Try to send via SMTP if configured, otherwise skip
+        try:
+            smtp_config = load_smtp_config()
+            if all([
+                    smtp_config.get('host'),
+                    smtp_config.get('port'),
+                    smtp_config.get('email'),
+                    smtp_config.get('password')
+            ]):
+                with smtplib.SMTP(smtp_config.get('host'),
+                                  int(smtp_config.get('port'))) as server:
+                    server.starttls()
+                    server.login(smtp_config.get('email'),
+                                 smtp_config.get('password'))
+                    server.send_message(msg)
+                return True
+        except Exception as e:
+            app.logger.debug(
+                f"Could not send confirmation email via SMTP: {str(e)}")
+
+        return False
+    except Exception as e:
+        app.logger.error(f"Error preparing confirmation email: {str(e)}")
+        return False
+
+
+@app.route('/contact', methods=['POST'])
+def contact():
+    """Portfolio contact form processing - Consolidated storage"""
+    try:
+        # Check honeypot field
+        if request.form.get('website'):
+            return jsonify({'success': True})
+
+        # Rate limiting
+        if not check_rate_limit('portfolio_contact'):
+            flash('Too many requests.', 'danger')
+            return redirect(request.referrer or url_for('index'))
+
+        # Capture form fields
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message_content = request.form.get('message')
+        portfolio_owner = request.form.get('portfolio_owner') 
+        
+        # Additional fields from portfolio form
+        request_type = request.form.get('request_type', 'General Inquiry')
+        interest_area = request.form.get('interest_area', 'General')
+        seriousness = request.form.get('seriousness', 'n/a')
+        contact_pref = request.form.get('contact_pref', 'n/a')
+        company = request.form.get('company', '')
+        phone = request.form.get('phone', '')
+
+        if not all([name, email, message_content, portfolio_owner]):
+            flash('Required fields missing.', 'danger')
+            return redirect(request.referrer or url_for('index'))
+
+        # SEPARATION LOGIC: Completely distinct systems for Platform vs Portfolio
+        if portfolio_owner == 'admin':
+            # PLATFORM CONTACT (Admin Inbox)
+            category = 'platform'
+            target_id = 'admin'
+            workspace_id = None
+            
+            enhanced_msg = f"Platform Inquiry\n"
+            if company: enhanced_msg += f"Company: {company}\n"
+            enhanced_msg += f"\nMessage: {message_content}"
+        else:
+            # PORTFOLIO CONTACT (User Inbox)
+            target_user = User.query.filter_by(username=portfolio_owner).first()
+            if not target_user:
+                # Fallback: check if user exists in JSON data if not in DB
+                all_data = load_data()
+                users_list = all_data.get('users', [])
+                json_user = next((u for u in users_list if u.get('username') == portfolio_owner), None)
+                
+                if json_user:
+                    category = 'portfolio'
+                    target_id = str(json_user.get('id'))
+                    workspace_id = None
+                else:
+                    flash('Portfolio owner not found.', 'danger')
+                    return redirect(request.referrer or url_for('index'))
+            else:
+                category = 'portfolio'
+                target_id = str(target_user.id)
+                workspace_id = target_user.workspace_id
+            
+            # Aggregate portfolio form fields into message body
+            enhanced_msg = f"Request Type: {request_type}\n"
+            enhanced_msg += f"Interest Area: {interest_area}\n"
+            if company: enhanced_msg += f"Company: {company}\n"
+            enhanced_msg += f"Seriousness: {seriousness}\n"
+            enhanced_msg += f"Preferred Contact: {contact_pref}\n"
+            if phone: enhanced_msg += f"Phone: {phone}\n"
+            enhanced_msg += f"\nMessage: {message_content}"
+
+        new_msg = Message(
+            id=str(uuid.uuid4()),
+            workspace_id=workspace_id,
+            name=name,
+            email=email,
+            message=enhanced_msg,
+            is_internal=False,
+            sender_role='visitor',
+            category=category,
+            receiver_id=target_id,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+
+        # Update JSON only for portfolio owner view (Legacy Support)
+        user_data = load_data(username=portfolio_owner)
+        if 'messages' not in user_data: user_data['messages'] = []
+        user_data['messages'].append({
+            'id': new_msg.id,
+            'name': name,
+            'email': email,
+            'message': enhanced_msg,
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'read': False,
+            'category': category
+        })
+        save_data(user_data, username=portfolio_owner)
+
+        log_ip_activity('platform_contact' if portfolio_owner == 'admin' else 'portfolio_contact', f'To: {portfolio_owner}')
+        flash('Your message has been delivered.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Contact error: {str(e)}")
+        flash('System error.', 'danger')
+
+    return redirect(request.referrer or url_for('index'))
+
+
+@app.route('/portfolio/<username>/project/<int:project_id>')
+def project_detail(username, project_id):
+    """Project detail page for a specific user"""
+    user_data = load_data(username=username)
+    if not user_data:
+        return render_template('404.html'), 404
+
+    project = next(
+        (p
+         for p in user_data.get('projects', []) if p.get('id') == project_id),
+        None)
+
+    if not project:
+        return render_template('404.html'), 404
+
+    return render_template('project_detail.html',
+                           project=project,
+                           data=user_data)
+
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate dynamic sitemap for SEO"""
+    data = load_data()
+    base_url = request.url_root.rstrip('/')
+
+    sitemap_entries = []
+    sitemap_entries.append({
+        'loc': f'{base_url}/',
+        'changefreq': 'weekly',
+        'priority': '1.0',
+        'lastmod': datetime.now().strftime('%Y-%m-%d')
+    })
+
+    for project in data.get('projects', []):
+        sitemap_entries.append({
+            'loc':
+            f"{base_url}/project/{project['id']}",
+            'changefreq':
+            'monthly',
+            'priority':
+            '0.8',
+            'lastmod':
+            project.get('created_at',
+                        datetime.now().strftime('%Y-%m-%d')).split()[0]
+        })
+
+    sitemap_xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+    sitemap_xml.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'
+    )
+
+    for entry in sitemap_entries:
+        sitemap_xml.append('<url>')
+        sitemap_xml.append(f'<loc>{entry["loc"]}</loc>')
+        sitemap_xml.append(f'<lastmod>{entry["lastmod"]}</lastmod>')
+        sitemap_xml.append(f'<changefreq>{entry["changefreq"]}</changefreq>')
+        sitemap_xml.append(f'<priority>{entry["priority"]}</priority>')
+        sitemap_xml.append('</url>')
+
+    sitemap_xml.append('</urlset>')
+
+    response = app.make_response('\n'.join(sitemap_xml))
+    response.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    return response
+
+
+@app.route('/robots.txt')
+def robots():
+    """Generate robots.txt for SEO"""
+    robots_txt = """User-agent: *
+Allow: /
+Allow: /project/
+Allow: /cv-preview
+Allow: /sitemap.xml
+Disallow: /dashboard/
+Disallow: /static/
+Disallow: /*.json$
+
+Sitemap: """ + request.url_root.rstrip('/') + """/sitemap.xml
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /"""
+
+    response = app.make_response(robots_txt)
+    response.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return response
+
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon"""
+    return send_file('static/favicon.ico', mimetype='image/x-icon')
+
+
+# Backup & Restore Routes
+@app.route('/dashboard/backups')
+@login_required
+def view_backups():
+    """View all available backups - redirect to settings"""
+    return redirect(url_for('dashboard_settings') + '#backups')
+
+
+@app.route('/backup/create', methods=['POST'])
+@login_required
+def create_manual_backup():
+    """Create a manual backup"""
+    try:
+        backup_info = create_backup(manual=True)
+        if backup_info:
+            flash(f'✓ Backup created successfully: {backup_info["filename"]}',
+                  'success')
+            username = session.get('username')
+            send_event_notification_async(
+                'backup_created',
+                f'Manual backup: {backup_info["filename"]} ({backup_info["size_kb"]} KB)',
+                username=username)
+        else:
+            flash('Error creating backup', 'error')
+    except Exception as e:
+        app.logger.error(f"Error creating manual backup: {str(e)}")
+        flash('Error creating backup', 'error')
+    return redirect(url_for('dashboard_settings') + '#backups')
+
+
+@app.route('/backup/restore/<filename>', methods=['POST'])
+@login_required
+@disable_in_demo
+def restore_backup(filename):
+    """Restore a backup"""
+    try:
+        filename = secure_filename(filename)
+        backup_path = os.path.join('backups', filename)
+
+        if not os.path.exists(backup_path):
+            flash('Backup file not found', 'error')
+            return redirect(url_for('dashboard_settings') + '#backups')
+
+        if os.path.exists('data.json'):
+            recovery_backup = f'backups/recovery_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            shutil.copy('data.json', recovery_backup)
+
+        shutil.copy(backup_path, 'data.json')
+        flash(f'✓ Portfolio restored from backup: {filename}', 'success')
+        username = session.get('username')
+        send_event_notification_async('backup_restored',
+                                      f'Restored from: {filename}',
+                                      username=username)
+        return redirect(url_for('dashboard_settings') + '#backups')
+    except Exception as e:
+        app.logger.error(f"Error restoring backup: {str(e)}")
+        flash('Error restoring backup', 'error')
+        return redirect(url_for('dashboard_settings') + '#backups')
+
+
+@app.route('/backup/download/<filename>')
+@login_required
+def download_backup(filename):
+    """Download a backup file"""
+    try:
+        filename = secure_filename(filename)
+        backup_path = os.path.join('backups', filename)
+
+        if not os.path.exists(backup_path):
+            flash('Backup file not found', 'error')
+            return redirect(url_for('dashboard_settings') + '#backups')
+
+        return send_file(backup_path,
+                         as_attachment=True,
+                         download_name=filename)
+    except Exception as e:
+        app.logger.error(f"Error downloading backup: {str(e)}")
+        flash('Error downloading backup', 'error')
+        return redirect(url_for('dashboard_settings') + '#backups')
+
+
+@app.route('/backup/delete/<filename>', methods=['POST'])
+@login_required
+@disable_in_demo
+def delete_backup(filename):
+    """Delete a backup file"""
+    try:
+        filename = secure_filename(filename)
+        backup_path = os.path.join('backups', filename)
+
+        if not os.path.exists(backup_path):
+            flash('Backup file not found', 'error')
+            return redirect(url_for('dashboard_settings') + '#backups')
+
+        os.remove(backup_path)
+
+        backups = get_backups_list()
+        updated_backups = [b for b in backups if b['filename'] != filename]
+        with open('backups/backups.json', 'w', encoding='utf-8') as f:
+            json.dump(updated_backups, f, ensure_ascii=False, indent=2)
+
+        flash(f'✓ Backup deleted: {filename}', 'success')
+    except Exception as e:
+        app.logger.error(f"Error deleting backup: {str(e)}")
+        flash('Error deleting backup', 'error')
+
+    return redirect(url_for('dashboard_settings') + '#backups')
+
+
+@app.route('/api/backups')
+@login_required
+def api_backups():
+    """API endpoint to get backups list"""
+    try:
+        backups = get_backups_list()
+        return jsonify(backups)
+    except Exception as e:
+        app.logger.error(f"Error fetching backups: {str(e)}")
+        return jsonify([]), 500
+
+
+# Admin routes
 @app.route('/dashboard/login', methods=['GET', 'POST'])
 def dashboard_login():
+    """Admin and User login"""
     if request.method == 'POST':
-        u = request.form.get('username')
-        p = request.form.get('password')
-        user = User.query.filter_by(username=u).first()
-        if user and check_password_hash(user.password_hash, p):
-            session.update({'admin_logged_in':True,'username':u,'user_id':user.id,'is_admin':user.role=='admin','is_demo_mode':user.role=='demo'})
-            return redirect(url_for('dashboard'))
-        if u == ADMIN_CREDENTIALS['username'] and check_password_hash(ADMIN_CREDENTIALS['password_hash'], p):
-            session.update({'admin_logged_in':True,'username':u,'is_admin':True,'is_demo_mode':False})
-            return redirect(url_for('dashboard'))
-        flash('Invalid credentials', 'error')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        client_ip = get_client_ip()
+
+        # Check main Admin
+        if username == ADMIN_CREDENTIALS['username'] and check_password_hash(
+                ADMIN_CREDENTIALS['password_hash'], password):
+            session['admin_logged_in'] = True
+            session['is_admin'] = True
+            session['is_demo_mode'] = False
+            session['username'] = username
+            flash('Admin Login Successful!', 'success')
+            log_ip_activity('admin_login', f"User: {username}")
+            send_event_notification_async(
+                'login_attempt',
+                f"Admin: {username} (IP: {client_ip})",
+                username=username)
+            return redirect(url_for('index'))
+
+        # Check other users in data.json
+        data = load_data()
+        users = data.get('users', [])
+        for user in users:
+            if user['username'] == username and check_password_hash(
+                    user['password_hash'], password):
+                session['admin_logged_in'] = True
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                session['is_admin'] = (user.get('role') == 'admin')
+                # Explicitly check for admin user in users list to prevent demo mode on them
+                if user['username'] == ADMIN_CREDENTIALS['username']:
+                    session['is_demo_mode'] = False
+                else:
+                    session['is_demo_mode'] = user.get('is_demo', True)
+
+                flash(f'Welcome back, {username}!', 'success')
+                log_ip_activity('user_login', f"User: {username}")
+                send_event_notification_async(
+                    'login_attempt',
+                    f"User: {username} (IP: {client_ip})",
+                    username=username)
+                return redirect(url_for('index'))
+
+        flash('Invalid credentials. Please try again.', 'error')
+        log_ip_activity('failed_login', f"Username: {username}")
+
     return render_template('dashboard/login.html')
+
+
+@app.route('/dashboard/users/add', methods=['POST'])
+@login_required
+@admin_required
+@disable_in_demo
+def dashboard_add_user():
+    """Create a new user account from the Admin Panel"""
+    username = request.form.get('username')
+    password = request.form.get('password')
+    email = request.form.get('email')
+    role = request.form.get('role', 'user')
+    is_demo = request.form.get('is_demo') == 'on'
+
+    if not username or not password or not email:
+        flash('All fields are required', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Check for existing user in data.json
+    data = load_data()
+    if 'users' not in data:
+        data['users'] = []
+
+    if any(u['username'] == username for u in data['users']):
+        flash('Username already exists', 'error')
+        return redirect(url_for('dashboard_users'))
+
+    # Hash password and create user object for data.json
+    new_user = {
+        'id': len(data['users']) + 1,
+        'username': username,
+        'password_hash': generate_password_hash(password),
+        'email': email,
+        'role': role,
+        'is_demo': is_demo,
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    data['users'].append(new_user)
+
+    # Initialize portfolio for the new user
+    if 'portfolios' not in data:
+        data['portfolios'] = {}
+    data['portfolios'][username] = {
+        'username': username,
+        'name': '',
+        'title': '',
+        'description': '',
+        'about': '',
+        'photo': '',
+        'skills': [],
+        'projects': [],
+        'messages': [],
+        'clients': [],
+        'contact': {
+            'email': '',
+            'phone': '',
+            'location': ''
+        },
+        'social': {
+            'linkedin': '',
+            'github': '',
+            'twitter': ''
+        },
+        'settings': {
+            'theme': 'luxury-gold'
+        },
+        'visitors': {
+            'total': 0,
+            'today': [],
+            'unique_ips': []
+        }
+    }
+
+    save_data(data)
+
+    # Sync with PostgreSQL
+    try:
+        ws = Workspace.query.first()
+        if not ws:
+            ws = Workspace(name='Default', slug='default')
+            db.session.add(ws)
+            db.session.commit()
+
+        # Check if user already exists in DB to avoid UniqueViolation
+        existing_db_user = User.query.filter_by(username=username).first()
+        if existing_db_user:
+            existing_db_user.password_hash = new_user['password_hash']
+            existing_db_user.email = email
+            existing_db_user.role = role
+        else:
+            db_user = User(username=username,
+                           password_hash=new_user['password_hash'],
+                           email=email,
+                           role=role,
+                           workspace_id=ws.id)
+            db.session.add(db_user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error syncing user to DB: {str(e)}")
+        flash(f'Error syncing with database: {str(e)}', 'warning')
+
+    flash(f'User {username} added successfully.', 'success')
+    return redirect(url_for('dashboard_users'))
+
+
+@app.route('/dashboard/logout')
+@login_required
+def dashboard_logout():
+    """User/Admin logout"""
+    session.clear()
+    flash('Logout successful', 'success')
+    return redirect(url_for('dashboard_login'))
+
 
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Load stats or users if needed for index.html
-    users = User.query.all()
-    projects = Project.query.all()
-    messages = Message.query.all()
-    visitors = VisitorLog.query.count()
-    
-    data = {
-        'users': users,
-        'projects': projects,
-        'messages': messages
-    }
-    
-    # Calculate additional stats needed by the template
-    stats = {
-        'projects': len(projects),
-        'skills': Skill.query.count(),
-        'messages': len(messages),
-        'unread_messages': Message.query.filter_by(is_read=False).count(),
-        'visitors': visitors,
-        'today_visitors': VisitorLog.query.filter(VisitorLog.created_at >= datetime.utcnow().date()).count()
-    }
-    
+    """Main dashboard page"""
+    username = session.get('username')
+    is_admin = session.get('is_admin', False)
+    data = load_data()
+
+    if is_admin:
+        stats = {
+            'users':
+            len(data.get('users', [])),
+            'active_portfolios':
+            len([
+                u for u in data.get('users', []) if not u.get('is_demo', True)
+            ]),
+            'messages':
+            0,
+            'visitors':
+            0
+        }
+        for port in data.get('portfolios', {}).values():
+            stats['messages'] += len(port.get('messages', []))
+            stats['visitors'] += port.get('visitors', {}).get('total', 0)
+    else:
+        user_data = data.get('portfolios', {}).get(username, {})
+        stats = {
+            'projects':
+            len(user_data.get('projects', [])),
+            'skills':
+            len(user_data.get('skills', [])),
+            'messages':
+            len(user_data.get('messages', [])),
+            'unread_messages':
+            len([
+                m for m in user_data.get('messages', [])
+                if not m.get('read', False)
+            ]),
+            'visitors':
+            user_data.get('visitors', {}).get('total', 0),
+            'today_visitors':
+            len(user_data.get('visitors', {}).get('today', []))
+        }
     return render_template('dashboard/index.html', data=data, stats=stats)
 
-@app.route('/dashboard/change_password', methods=['GET', 'POST'])
+
+@app.route('/guides/telegram-bot-token')
+def guide_bot_token():
+    """Guide for getting Telegram Bot Token"""
+    return render_template('pages/guide_bot_token.html')
+
+
+@app.route('/guides/telegram-chat-id')
+def guide_chat_id():
+    """Guide for getting Telegram Chat ID"""
+    return render_template('pages/guide_chat_id.html')
+
+
+@app.route('/documentation')
+def documentation():
+    """Serve documentation page"""
+    import os
+    doc_path = os.path.join('Documentation', 'English',
+                            'documentation-english.html')
+    if os.path.exists(doc_path):
+        return send_file(doc_path)
+    else:
+        return render_template('404.html'), 404
+
+
+@app.route('/dashboard/settings', methods=['GET', 'POST'])
 @login_required
 @disable_in_demo
-def dashboard_change_password():
-    if request.method == 'POST':
-        curr = request.form.get('current_password')
-        new = request.form.get('new_password')
-        confirm = request.form.get('confirm_password')
-        
-        if not curr or not new or not confirm:
-            flash('All fields are required', 'error')
-            return redirect(url_for('dashboard_change_password'))
-            
-        if new != confirm:
-            flash('New passwords do not match', 'error')
-            return redirect(url_for('dashboard_change_password'))
-            
-        user = User.query.filter_by(username=session['username']).first()
-        
-        # Check if it's the hardcoded admin
-        if session['username'] == ADMIN_CREDENTIALS['username']:
-             if check_password_hash(ADMIN_CREDENTIALS['password_hash'], curr):
-                 # Admin password is in environment variables, can't change persistent storage
-                 # But we can update the hash for the current session's logic
-                 ADMIN_CREDENTIALS['password_hash'] = generate_password_hash(new)
-                 flash('Admin password updated for current session', 'success')
-                 return redirect(url_for('dashboard_settings'))
-             else:
-                 flash('Current admin password incorrect', 'error')
-                 return redirect(url_for('dashboard_change_password'))
-
-        if user and check_password_hash(user.password_hash, curr):
-            user.password_hash = generate_password_hash(new)
-            db.session.commit()
-            flash('Password updated successfully', 'success')
-            return redirect(url_for('dashboard_settings'))
-        else:
-            flash('Current password is incorrect', 'error')
-            return redirect(url_for('dashboard_change_password'))
-            
-    return render_template('dashboard/change_password.html')
-
-@app.route('/dashboard/settings')
-@login_required
 def dashboard_settings():
-    # Fetch themes and current user settings if needed
-    themes = [
-        {'id': 'luxury-gold', 'name': 'Luxury Gold', 'icon': 'fas fa-crown', 'description': 'Premium design'},
-        {'id': 'clean-light', 'name': 'Clean Light', 'icon': 'fas fa-sun', 'description': 'Minimalist'},
-        {'id': 'modern-dark', 'name': 'Modern Dark', 'icon': 'fas fa-moon', 'description': 'Sleek dark mode'}
-    ]
-    return render_template('dashboard/settings.html', themes=themes)
+    """Dashboard settings page for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
 
-@app.route('/dashboard/profile')
-@login_required
-def dashboard_profile():
-    user = User.query.filter_by(username=session['username']).first()
-    return render_template('dashboard/user_profile.html', user=user)
-
-@app.route('/dashboard/projects/add', methods=['GET', 'POST'])
-@login_required
-def add_project():
     if request.method == 'POST':
-        # Add logic to save project
-        flash('تم إضافة المشروع بنجاح', 'success')
-        return redirect(url_for('dashboard_projects'))
-    return render_template('dashboard/add_project.html')
+        if 'settings' not in data:
+            data['settings'] = {}
 
-@app.route('/dashboard/logout')
-def dashboard_logout():
-    session.clear()
-    return redirect(url_for('dashboard_login'))
+        selected_theme = request.form.get('theme', 'luxury-gold')
+        valid_themes = [
+            'luxury-gold', 'modern-dark', 'clean-light', 'terracotta-red',
+            'vibrant-green', 'silver-grey'
+        ]
+        if selected_theme in valid_themes:
+            # Theme isolation: saves specifically to the current user's profile
+            data['settings']['theme'] = selected_theme
+            save_data(data, username=username)
+            flash(
+                f'Theme changed to {selected_theme.replace("-", " ").title()} successfully',
+                'success')
+        else:
+            flash('Invalid theme selected', 'error')
 
-@app.route('/verification')
-def verification():
-    return render_template('pages/verification.html')
+        return redirect(url_for('dashboard_settings'))
 
-@app.route('/privacy')
-def privacy():
-    return render_template('pages/privacy.html')
+    themes = [{
+        'id': 'luxury-gold',
+        'name': 'Luxury Gold',
+        'icon': 'fas fa-crown',
+        'description': 'Premium & Classic'
+    }, {
+        'id': 'modern-dark',
+        'name': 'Modern Dark',
+        'icon': 'fas fa-zap',
+        'description': 'Tech & Trendy'
+    }, {
+        'id': 'clean-light',
+        'name': 'Clean Light',
+        'icon': 'fas fa-sun',
+        'description': 'Minimal & Fresh'
+    }, {
+        'id': 'terracotta-red',
+        'name': 'Terracotta Red',
+        'icon': 'fas fa-fire',
+        'description': 'Warm & Modern'
+    }, {
+        'id': 'vibrant-green',
+        'name': 'Vibrant Green',
+        'icon': 'fas fa-leaf',
+        'description': 'Natural & Fresh'
+    }, {
+        'id': 'silver-grey',
+        'name': 'Silver Grey',
+        'icon': 'fas fa-gem',
+        'description': 'Sophisticated & Modern'
+    }]
 
-@app.route('/terms')
-def terms():
-    return render_template('pages/terms.html')
+    current_theme = data.get('settings', {}).get('theme', 'luxury-gold')
 
-@app.route('/security')
-def security_audit():
-    return render_template('pages/security.html')
+    # Load Telegram credentials (user-specific)
+    notifications = data.get('notifications', {})
+    telegram_config = notifications.get('telegram', {})
+    telegram_bot_token = telegram_config.get('bot_token', '')
+    telegram_chat_id = telegram_config.get('chat_id', '')
+    
+    telegram_status = bool(telegram_bot_token and telegram_chat_id)
 
-@app.route('/standards')
-def standards():
-    return render_template('pages/standards.html')
+    telegram_bot_token_display = telegram_bot_token[:10] + '...' if telegram_bot_token else ''
 
-@app.route('/mastery')
-def mastery():
-    return render_template('pages/mastery.html')
+    # Load SMTP config (user-specific)
+    smtp_config = notifications.get('smtp', {})
+    smtp_host = smtp_config.get('host', '')
+    smtp_port = smtp_config.get('port', '')
+    smtp_email = smtp_config.get('email', '')
+    smtp_status = bool(
+        all([smtp_host, smtp_port, smtp_email,
+             smtp_config.get('password')]))
 
-@app.route('/about')
-def about():
-    return render_template('pages/about.html')
+    return render_template('dashboard/settings.html',
+                           themes=themes,
+                           current_theme=current_theme,
+                           data=data,
+                           telegram_bot_token=telegram_bot_token_display,
+                           telegram_chat_id=telegram_chat_id,
+                           telegram_status=telegram_status,
+                           smtp_host=smtp_host,
+                           smtp_port=smtp_port,
+                           smtp_email=smtp_email,
+                           smtp_status=smtp_status)
 
-@app.route('/contact', methods=['POST'])
-def contact_academy():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        msg = request.form.get('message')
-        # Here you would typically save to DB or send email
-        flash('شكراً لتواصلك معنا، سنرد عليك قريباً', 'success')
-    return redirect(url_for('landing'))
 
-@app.route('/dashboard/clients')
+@app.route('/dashboard/telegram', methods=['POST'])
 @login_required
-def dashboard_clients():
-    clients = Client.query.all()
-    return render_template('dashboard/clients.html', clients=clients)
+@disable_in_demo
+def dashboard_telegram():
+    """Update Telegram settings - per-user configuration"""
+    username = session.get('username')
+    bot_token = request.form.get('bot_token', '').strip()
+    chat_id = request.form.get('chat_id', '').strip()
+
+    if not bot_token or not chat_id:
+        flash('Please provide both Bot Token and Chat ID', 'error')
+        return redirect(url_for('dashboard_settings'))
+
+    try:
+        # Test connection to Telegram API
+        test_url = f"https://api.telegram.org/bot{bot_token}/getMe"
+        response = requests.get(test_url, timeout=5)
+
+        if response.status_code != 200:
+            flash('Invalid Telegram Bot Token. Please check and try again.',
+                  'error')
+            return redirect(url_for('dashboard_settings'))
+
+        # Send test message
+        test_message_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        test_payload = {
+            'chat_id': chat_id,
+            'text':
+            '✅ Telegram notifications configured successfully for your Codexx Portfolio!',
+            'parse_mode': 'HTML'
+        }
+        test_response = requests.post(test_message_url,
+                                      json=test_payload,
+                                      timeout=5)
+
+        if test_response.status_code != 200:
+            flash(
+                'Invalid Telegram Chat ID or permission denied. Please check and try again.',
+                'error')
+            return redirect(url_for('dashboard_settings'))
+
+        # Save to user data (per-user configuration)
+        data = load_data(username=username)
+        if 'notifications' not in data:
+            data['notifications'] = {}
+
+        data['notifications']['telegram'] = {
+            'bot_token': bot_token,
+            'chat_id': chat_id,
+            'configured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        save_data(data, username=username)
+
+        flash(
+            '✅ Telegram notifications configured successfully for your portfolio! Check your Telegram for a test message.',
+            'success')
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Telegram configuration error: {str(e)}")
+        flash(
+            'Connection error. Please check your internet connection and try again.',
+            'error')
+    except Exception as e:
+        app.logger.error(f"Telegram error: {str(e)}")
+        flash('An error occurred. Please try again.', 'error')
+
+    return redirect(url_for('dashboard_settings'))
+
+
+@app.route('/dashboard/smtp', methods=['POST'])
+@login_required
+@disable_in_demo
+def dashboard_smtp():
+    """Update SMTP settings - per-user configuration"""
+    username = session.get('username')
+    smtp_host = request.form.get('smtp_host', '').strip()
+    smtp_port = request.form.get('smtp_port', '').strip()
+    smtp_email = request.form.get('smtp_email', '').strip()
+    smtp_password = request.form.get('smtp_password', '').strip()
+
+    if not all([smtp_host, smtp_port, smtp_email, smtp_password]):
+        flash('Please provide all SMTP settings', 'error')
+        return redirect(url_for('dashboard_settings'))
+
+    try:
+        # Save to user data (per-user configuration)
+        data = load_data(username=username)
+        if 'notifications' not in data:
+            data['notifications'] = {}
+
+        data['notifications']['smtp'] = {
+            'host': smtp_host,
+            'port': smtp_port,
+            'email': smtp_email,
+            'password': smtp_password,
+            'configured_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        save_data(data, username=username)
+
+        flash('✅ SMTP settings saved successfully for your portfolio!',
+              'success')
+    except Exception as e:
+        app.logger.error(f"SMTP configuration error: {str(e)}")
+        flash('An error occurred. Please try again.', 'error')
+
+    return redirect(url_for('dashboard_settings'))
+
+
+@app.route('/dashboard/email-test', methods=['POST'])
+@login_required
+@disable_in_demo
+def email_test_connection():
+    """Test SMTP connection"""
+    username = session.get('username')
+    smtp_config = load_smtp_config(username=username)
+
+    if not all([
+            smtp_config.get('host'),
+            smtp_config.get('email'),
+            smtp_config.get('password')
+    ]):
+        return jsonify({'success': False, 'error': 'SMTP not configured'})
+
+    try:
+        test_subject = '🧪 Codexx Portfolio - Email Test'
+        test_body = """
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <h2 style="color: #D4AF37;">✅ Email Connection Test Successful!</h2>
+                <p>Your SMTP configuration is working perfectly.</p>
+                <p><strong>Email Address:</strong> {}</p>
+                <p><strong>Server:</strong> {}:{}</p>
+                <p style="margin-top: 20px; color: #666; font-size: 12px;">
+                    This is a test email from your Codexx Portfolio.
+                </p>
+            </body>
+        </html>
+        """.format(smtp_config.get('email'), smtp_config.get('host'),
+                   smtp_config.get('port'))
+
+        if send_email(smtp_config.get('email'),
+                      test_subject,
+                      test_body,
+                      html=True,
+                      username=username):
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to send email'})
+    except Exception as e:
+        app.logger.error(f"Email test error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/dashboard/telegram-test', methods=['POST'])
+@login_required
+@disable_in_demo
+def telegram_test_connection():
+    """Test Telegram connection"""
+    username = session.get('username')
+    bot_token, chat_id = get_telegram_credentials(username=username)
+
+    if not bot_token or not chat_id:
+        return jsonify({'success': False, 'error': 'Telegram not configured'})
+
+    try:
+        # Send test message
+        test_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        test_payload = {
+            'chat_id': chat_id,
+            'text':
+            '🧪 <b>Connection Test Successful!</b>\n✅ Your Portfolio Bot is working perfectly!',
+            'parse_mode': 'HTML'
+        }
+        test_response = requests.post(test_url, json=test_payload, timeout=5)
+
+        if test_response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'message': 'Test message sent successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to send test message'
+            })
+    except Exception as e:
+        app.logger.error(f"Test connection error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/dashboard/general', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_general():
+    """Edit general information"""
+    username = session.get('username')
+    data = load_data(username=username)
+
+    if request.method == 'POST':
+        data['name'] = request.form.get('name', '')
+        data['title'] = request.form.get('title', '')
+        data['description'] = request.form.get('description', '')
+
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filename = f"profile_{username}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                data['photo'] = f"static/assets/uploads/{filename}"
+
+        save_data(data, username=username)
+        flash('General information saved successfully', 'success')
+        return redirect(url_for('dashboard_general'))
+
+    return render_template('dashboard/general.html', data=data)
+
+
+@app.route('/dashboard/about', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_about():
+    """Edit about section"""
+    username = session.get('username')
+    data = load_data(username=username)
+
+    if request.method == 'POST':
+        data['about'] = request.form.get('about', '')
+        save_data(data, username=username)
+        flash('About section saved successfully', 'success')
+        return redirect(url_for('dashboard_about'))
+
+    return render_template('dashboard/about.html', data=data)
+
+
+@app.route('/dashboard/skills', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_skills():
+    """Edit skills section"""
+    username = session.get('username')
+    data = load_data(username=username)
+
+    if request.method == 'POST':
+        skills = []
+        skill_names = request.form.getlist('skill_name[]')
+        skill_levels = request.form.getlist('skill_level[]')
+
+        for name, level in zip(skill_names, skill_levels):
+            if name.strip():
+                skills.append({
+                    'name':
+                    name.strip(),
+                    'level':
+                    int(level)
+                    if level.isdigit() and 0 <= int(level) <= 100 else 0
+                })
+
+        data['skills'] = skills
+        save_data(data, username=username)
+        flash('Skills saved successfully', 'success')
+        return redirect(url_for('dashboard_skills'))
+
+    return render_template('dashboard/skills.html', data=data)
+
 
 @app.route('/dashboard/projects')
 @login_required
+@disable_in_demo
 def dashboard_projects():
-    projects = Project.query.all()
-    return render_template('dashboard/projects.html', projects=projects)
+    """List all projects"""
+    username = session.get('username')
+    data = load_data(username=username)
+    return render_template('dashboard/projects.html', data=data)
 
-@app.route('/dashboard/users', methods=['GET', 'POST'])
+
+@app.route('/dashboard/projects/add', methods=['GET', 'POST'])
 @login_required
-def dashboard_users():
+@disable_in_demo
+def dashboard_add_project():
+    """Add new project"""
+    username = session.get('username')
     if request.method == 'POST':
-        if not session.get('is_admin'):
-            flash('Access denied', 'error')
-            return redirect(url_for('dashboard'))
-            
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        role = request.form.get('role', 'user')
-        is_demo = 'is_demo' in request.form
+        data = load_data(username=username)
 
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists', 'error')
-        elif User.query.filter_by(email=email).first():
-            flash('Email already exists', 'error')
-        else:
-            # Need workspace_id for the user
-            workspace = Workspace.query.first()
-            if not workspace:
-                workspace = Workspace(name="Default Workspace", slug="default")
-                db.session.add(workspace)
-                db.session.commit()
-                
-            new_user = User(
-                username=username,
-                email=email,
-                password_hash=generate_password_hash(password),
-                role=role,
-                workspace_id=workspace.id,
-                is_active=True
-            )
-            db.session.add(new_user)
-            db.session.commit()
-            flash('User created successfully', 'success')
-        return redirect(url_for('dashboard_users'))
+        project_ids = [p.get('id', 0) for p in data.get('projects', [])]
+        new_id = max(project_ids) + 1 if project_ids else 1
 
-    users = User.query.all()
-    return render_template('dashboard/users.html', users=users)
+        image_path = "static/assets/project-placeholder.svg"
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filename = f"project_{username}_{new_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                image_path = f"static/assets/uploads/{filename}"
 
-@app.route('/dashboard/users/delete/<user_id>', methods=['POST'])
+        technologies = [
+            tech.strip() for tech in request.form.getlist('technologies[]')
+            if tech.strip()
+        ]
+        short_desc = request.form.get('short_description', '').strip()
+        full_content = request.form.get('content', '').strip()
+
+        new_project = {
+            'id': new_id,
+            'title': request.form.get('title', '').strip(),
+            'short_description': short_desc,
+            'content': full_content,
+            'description': short_desc,
+            'image': image_path,
+            'demo_url': request.form.get('demo_url', '').strip() or '#',
+            'github_url': request.form.get('github_url', '').strip() or '#',
+            'technologies': technologies
+        }
+
+        if 'projects' not in data:
+            data['projects'] = []
+        data['projects'].append(new_project)
+
+        save_data(data, username=username)
+        flash('Project added successfully', 'success')
+        return redirect(url_for('dashboard_projects'))
+
+    return render_template('dashboard/add_project.html')
+
+
+@app.route('/dashboard/projects/edit/<int:project_id>',
+           methods=['GET', 'POST'])
 @login_required
-def delete_user(user_id):
-    if not session.get('is_admin'):
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    user = User.query.get(user_id)
-    if user and user.username != 'admin':
-        db.session.delete(user)
-        db.session.commit()
-        flash('User deleted successfully', 'success')
-    return redirect(url_for('dashboard_users'))
+@disable_in_demo
+def dashboard_edit_project(project_id):
+    """Edit existing project for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    project = next(
+        (p for p in data.get('projects', []) if p.get('id') == project_id),
+        None)
 
-@app.route('/dashboard/users/toggle_demo/<user_id>', methods=['POST'])
-@login_required
-def toggle_user_demo(user_id):
-    if not session.get('is_admin'):
-        flash('Access denied', 'error')
-        return redirect(url_for('dashboard'))
-    user = User.query.get(user_id)
-    if user:
-        user.is_demo = not getattr(user, 'is_demo', False)
-        db.session.commit()
-        flash('User status updated', 'success')
-    return redirect(url_for('dashboard_users'))
+    if not project:
+        flash('Project not found', 'error')
+        return redirect(url_for('dashboard_projects'))
 
-@app.route('/dashboard/users/view/<user_id>')
+    if request.method == 'POST':
+        short_desc = request.form.get('short_description', '').strip()
+        full_content = request.form.get('content', '').strip()
+
+        project['title'] = request.form.get('title', '').strip()
+        project['short_description'] = short_desc
+        project['content'] = full_content
+        project['description'] = short_desc
+        project['demo_url'] = request.form.get('demo_url', '').strip() or '#'
+        project['github_url'] = request.form.get('github_url',
+                                                 '').strip() or '#'
+
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filename = f"project_{username}_{project_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                project['image'] = f"static/assets/uploads/{filename}"
+
+        project['technologies'] = [
+            tech.strip() for tech in request.form.getlist('technologies[]')
+            if tech.strip()
+        ]
+
+        save_data(data, username=username)
+        flash('Project updated successfully', 'success')
+        return redirect(url_for('dashboard_projects'))
+
+    return render_template('dashboard/edit_project.html', project=project)
+
+
+@app.route('/dashboard/projects/delete/<int:project_id>', methods=['POST'])
 @login_required
-def dashboard_view_user(user_id):
-    user = User.query.get_or_404(user_id)
-    return render_template('dashboard/user_profile.html', user=user)
+@disable_in_demo
+def dashboard_delete_project(project_id):
+    """Delete project for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    data['projects'] = [
+        p for p in data.get('projects', []) if p.get('id') != project_id
+    ]
+    save_data(data, username=username)
+    flash('Project deleted successfully', 'success')
+    return redirect(url_for('dashboard_projects'))
+
+
+@app.route('/dashboard/contact', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_contact():
+    """Edit contact information for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+
+    if request.method == 'POST':
+        if 'contact' not in data:
+            data['contact'] = {}
+
+        data['contact']['email'] = request.form.get('email', '')
+        data['contact']['phone'] = request.form.get('phone', '')
+        data['contact']['location'] = request.form.get('location', '')
+
+        save_data(data, username=username)
+        flash('Contact information saved successfully', 'success')
+        return redirect(url_for('dashboard_contact'))
+
+    return render_template('dashboard/contact.html', data=data)
+
+
+@app.route('/dashboard/social', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_social():
+    """Edit social media links for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+
+    if request.method == 'POST':
+        if 'social' not in data:
+            data['social'] = {}
+
+        data['social']['linkedin'] = request.form.get('linkedin', '')
+        data['social']['github'] = request.form.get('github', '')
+        data['social']['twitter'] = request.form.get('twitter', '')
+        data['social']['instagram'] = request.form.get('instagram', '')
+        data['social']['facebook'] = request.form.get('facebook', '')
+        data['social']['youtube'] = request.form.get('youtube', '')
+        data['social']['behance'] = request.form.get('behance', '')
+        data['social']['dribbble'] = request.form.get('dribbble', '')
+
+        save_data(data, username=username)
+        flash('Social media links saved successfully', 'success')
+        return redirect(url_for('dashboard_social'))
+
+    return render_template('dashboard/social.html', data=data)
+
 
 @app.route('/dashboard/messages')
 @login_required
+@disable_in_demo
 def dashboard_messages():
-    messages = Message.query.all()
-    return render_template('dashboard/messages.html', messages=messages)
+    """List all messages with separation logic"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    user_id = str(session.get('user_id'))
+    
+    # Filter by category
+    category = request.args.get('category', 'portfolio')
+    
+    all_messages = []
+    
+    try:
+        if is_admin:
+            # Admin sees platform messages or portfolio messages directed to 'admin'
+            if category == 'all':
+                db_messages = Message.query.filter(
+                    Message.parent_id == None,
+                    Message.category.in_(['platform', 'internal'])
+                ).order_by(Message.created_at.desc()).all()
+            elif category == 'platform':
+                db_messages = Message.query.filter_by(category='platform', parent_id=None).order_by(Message.created_at.desc()).all()
+            elif category == 'internal':
+                db_messages = Message.query.filter_by(category='internal', parent_id=None).order_by(Message.created_at.desc()).all()
+            else: # portfolio (legacy support)
+                db_messages = Message.query.filter_by(category='portfolio', parent_id=None, receiver_id=user_id).order_by(Message.created_at.desc()).all()
+        else:
+            # Regular user only sees messages belonging to their portfolio category or internal
+            if category == 'all':
+                 db_messages = Message.query.filter(Message.parent_id == None, (Message.receiver_id == user_id) | (Message.sender_id == user_id)).order_by(Message.created_at.desc()).all()
+            elif category == 'internal':
+                 db_messages = Message.query.filter_by(category='internal', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()
+            else: # portfolio
+                 db_messages = Message.query.filter_by(category='portfolio', receiver_id=user_id, parent_id=None).order_by(Message.created_at.desc()).all()
 
-@app.route('/dashboard/skills')
-@login_required
-def dashboard_skills():
-    skills = Skill.query.all()
-    return render_template('dashboard/skills.html', skills=skills)
+        for msg in db_messages:
+            all_messages.append({
+                'id': str(msg.id),
+                'name': msg.name,
+                'email': msg.email,
+                'message': msg.message,
+                'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'read': msg.is_read,
+                'category': msg.category,
+                'is_db': True
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Error fetching messages: {str(e)}")
 
-@app.route('/dashboard/subscription')
-@login_required
-def dashboard_subscription():
-    return render_template('dashboard/subscription.html')
+    # Legacy / JSON Fallback for regular users (if not in DB)
+    if not is_admin:
+        json_data = load_data(username=username)
+        json_messages = json_data.get('messages', [])
+        for j_msg in json_messages:
+            # Avoid duplicates if already added from DB
+            if not any(str(m.get('id')) == str(j_msg.get('id')) for m in all_messages):
+                all_messages.append({
+                    'id': str(j_msg.get('id')),
+                    'name': j_msg.get('name'),
+                    'email': j_msg.get('email'),
+                    'message': j_msg.get('message'),
+                    'date': j_msg.get('date'),
+                    'read': j_msg.get('read', False),
+                    'category': j_msg.get('category', 'portfolio'),
+                    'is_db': False
+                })
 
-@app.route('/dashboard/social')
-@login_required
-def dashboard_social():
-    return render_template('dashboard/social.html')
+    # Sort messages by date to ensure proper ordering
+    all_messages.sort(key=lambda x: x['date'], reverse=True)
 
-@app.route('/dashboard/about')
-@login_required
-def dashboard_about():
-    return render_template('dashboard/about.html')
+    # Filtering logic for all_messages based on category
+    if category != 'all':
+        all_messages = [m for m in all_messages if m.get('category') == category]
 
-@app.route('/dashboard/projects/edit/<id>', methods=['GET', 'POST'])
+    return render_template('dashboard/messages.html', messages=all_messages, current_category=category)
+
+
+@app.route('/dashboard/messages/internal')
 @login_required
-def edit_project(id):
-    project = Project.query.get_or_404(id)
-    if request.method == 'POST':
-        # Edit logic
-        flash('تم تحديث المشروع بنجاح', 'success')
-        return redirect(url_for('dashboard_projects'))
-    return render_template('dashboard/edit_project.html', project=project)
+@disable_in_demo
+def dashboard_internal_messages():
+    """List all internal (member-to-member) messages"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    user_id = str(session.get('user_id'))
+    
+    all_messages = []
+    
+    try:
+        # Fetch internal messages from DB
+        db_messages = Message.query.filter_by(category='internal', parent_id=None).order_by(Message.created_at.desc()).all()
+        
+        # If not admin, filter to only those where user is sender or receiver
+        if not is_admin:
+            db_messages = [msg for msg in db_messages if msg.receiver_id == user_id or msg.sender_id == user_id]
+            
+        for msg in db_messages:
+            all_messages.append({
+                'id': str(msg.id),
+                'name': msg.name,
+                'email': msg.email,
+                'message': msg.message,
+                'date': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'read': msg.is_read,
+                'category': msg.category
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Error fetching internal messages: {str(e)}")
+
+    return render_template('dashboard/internal_messages.html', messages=all_messages)
+
+
+@app.route('/dashboard/messages/internal/compose')
+@app.route('/dashboard/messages/internal/compose/<receiver_id>')
+@login_required
+@disable_in_demo
+def dashboard_internal_compose(receiver_id=None):
+    """View for composing a new internal message"""
+    receiver = None
+    if receiver_id and receiver_id != 'admin':
+        receiver = User.query.get(receiver_id)
+        
+    return render_template('dashboard/internal_compose.html', receiver=receiver)
+
+
+@app.route('/dashboard/messages/internal/send', methods=['POST'])
+@login_required
+@disable_in_demo
+def dashboard_internal_send():
+    """Process sending a new internal message"""
+    user_id = str(session.get('user_id'))
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    
+    receiver_id = request.form.get('receiver_id')
+    message_content = request.form.get('message')
+    
+    if not message_content:
+        flash('Message content cannot be empty.', 'danger')
+        return redirect(url_for('dashboard_internal_compose', receiver_id=receiver_id))
+
+    try:
+        new_msg = Message(
+            id=str(uuid.uuid4()),
+            name='Admin' if is_admin else username,
+            email='admin@codexx.academy' if is_admin else session.get('email', ''),
+            message=message_content,
+            is_internal=True,
+            sender_id=user_id,
+            sender_role='admin' if is_admin else 'member',
+            receiver_id=receiver_id,
+            category='internal',
+            created_at=datetime.utcnow()
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+        flash('Message sent successfully.', 'success')
+        return redirect(url_for('dashboard_internal_messages'))
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error sending internal message: {str(e)}")
+        flash('System error.', 'danger')
+        return redirect(url_for('dashboard_internal_messages'))
+
+
+@app.route('/dashboard/messages/internal/view/<message_id>')
+@login_required
+@disable_in_demo
+def dashboard_internal_view(message_id):
+    """View internal message thread"""
+    is_admin = session.get('is_admin')
+    user_id = str(session.get('user_id'))
+    
+    try:
+        message = Message.query.get(message_id)
+        if not message:
+            flash('Message not found.', 'danger')
+            return redirect(url_for('dashboard_internal_messages'))
+            
+        # Security check: must be admin OR participant
+        if not is_admin and message.receiver_id != user_id and message.sender_id != user_id:
+            flash('Access denied.', 'danger')
+            return redirect(url_for('dashboard_internal_messages'))
+            
+        # Mark as read if receiver is viewing
+        if message.receiver_id == user_id and not message.is_read:
+            message.is_read = True
+            db.session.commit()
+            
+        # Get replies (thread)
+        replies = Message.query.filter_by(parent_id=str(message_id)).order_by(Message.created_at.asc()).all()
+        
+        return render_template('dashboard/view_message.html', message=message, replies=replies, is_internal_system=True)
+    except Exception as e:
+        app.logger.error(f"Error viewing internal message: {str(e)}")
+        flash('System error.', 'danger')
+        return redirect(url_for('dashboard_internal_messages'))
+
+
+@app.route('/dashboard/messages/view/<message_id>')
+@login_required
+@disable_in_demo
+def dashboard_view_message(message_id):
+    """View specific message for current user or admin"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+    data = load_data(username=username)
+    messages = data.get('messages', [])
+    
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                if not db_msg.is_read:
+                    db_msg.is_read = True
+                    db.session.commit()
+
+                message = {
+                    'id': db_msg.id,
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message,
+                    'date': db_msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': db_msg.is_read,
+                    'sender_role': db_msg.sender_role or ('member' if db_msg.sender_id else 'visitor'),
+                    'request_type': 'Academy Inquiry'
+                }
+                replies = [m for m in messages if m.get('parent_id') == str(message_id)]
+                return render_template('dashboard/view_message.html', message=message, replies=replies)
+        except Exception as e:
+            app.logger.error(f"Error viewing DB message: {str(e)}")
+
+    # Fallback to JSON isolation
+    message = next((m for m in messages if str(m.get('id')) == str(message_id)), None)
+    
+    # If not in JSON, check if it's a DB message where user is receiver
+    if not message and not is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg and db_msg.receiver_id == str(session.get('user_id')):
+                message = {
+                    'id': db_msg.id,
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message,
+                    'date': db_msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'read': db_msg.is_read,
+                    'sender_role': db_msg.sender_role,
+                    'request_type': 'Academy Reply',
+                    'is_db': True
+                }
+                if not db_msg.is_read:
+                    db_msg.is_read = True
+                    db.session.commit()
+        except Exception as e:
+            app.logger.error(f"Error viewing member DB message: {str(e)}")
+    if not message:
+        flash('Message not found.', 'danger')
+        return redirect(url_for('dashboard_messages'))
+
+    if not message.get('read'):
+        message['read'] = True
+        save_data(data, username=username)
+
+    replies = [m for m in messages if str(m.get('parent_id')) == str(message_id)]
+    return render_template('dashboard/view_message.html', message=message, replies=replies)
+    data = load_data(username=username)
+    message = next((m for m in data.get('messages', [])
+                    if str(m.get('id')) == str(message_id)), None)
+
+    if not message:
+        flash('Message not found', 'error')
+        return redirect(url_for('dashboard_messages'))
+
+    if not message.get('read', False):
+        message['read'] = True
+        save_data(data, username=username)
+
+    return render_template('dashboard/view_message.html', message=message)
+
+
+@app.route('/dashboard/messages/delete/<message_id>')
+@login_required
+@disable_in_demo
+def dashboard_delete_message(message_id):
+    """Delete message for current user or admin"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                db.session.delete(db_msg)
+                db.session.commit()
+                flash('Academy message deleted successfully', 'success')
+                return redirect(url_for('dashboard_messages'))
+        except:
+            pass
+
+    data = load_data(username=username)
+    data['messages'] = [
+        m for m in data.get('messages', [])
+        if str(m.get('id')) != str(message_id)
+    ]
+    save_data(data, username=username)
+    flash('Message deleted successfully', 'success')
+    return redirect(url_for('dashboard_messages'))
+
+
+@app.route('/dashboard/messages/convert/<message_id>')
+@login_required
+@disable_in_demo
+def dashboard_convert_message_to_client(message_id):
+    """Convert message to client for current user or admin"""
+    username = session.get('username')
+    is_admin = session.get('is_admin')
+
+    message = None
+
+    # Check if it's a DB message (for admin)
+    if is_admin:
+        try:
+            db_msg = Message.query.get(message_id)
+            if db_msg:
+                message = {
+                    'id': str(db_msg.id),
+                    'name': db_msg.name,
+                    'email': db_msg.email,
+                    'message': db_msg.message
+                }
+        except:
+            pass
+
+    # Fallback to JSON if not found in DB
+    if not message:
+        data = load_data(username=username)
+        message = next((m for m in data.get('messages', [])
+                        if str(m.get('id')) == str(message_id)), None)
+        current_data = data  # Keep reference for saving
+    else:
+        current_data = load_data(username=username)
+
+    if not message:
+        flash('Message not found', 'error')
+        return redirect(url_for('dashboard_messages'))
+
+    if 'clients' not in current_data:
+        current_data['clients'] = []
+
+    client_ids = [
+        c.get('id', 0) for c in current_data.get('clients', [])
+        if isinstance(c.get('id'), int)
+    ]
+    new_id = max(client_ids) + 1 if client_ids else 1
+
+    new_client = {
+        'id': new_id,
+        'name': message.get('name', ''),
+        'email': message.get('email', ''),
+        'phone': '',
+        'company': '',
+        'project_title': 'Inquiry from ' + (message.get('name') or 'Guest'),
+        'project_description': message.get('message', ''),
+        'status': 'lead',
+        'price': '',
+        'deadline': '',
+        'start_date': datetime.now().strftime('%Y-%m-%d'),
+        'notes': '',
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+    current_data['clients'].append(new_client)
+    save_data(current_data, username=username)
+
+    flash('Message converted to client successfully', 'success')
+    return redirect(url_for('dashboard_edit_client', client_id=new_id))
+
+
+@app.route('/dashboard/clients')
+@login_required
+@disable_in_demo
+def dashboard_clients():
+    """List all clients for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    if 'clients' not in data:
+        data['clients'] = []
+        save_data(data, username=username)
+
+    clients = sorted(data.get('clients', []),
+                     key=lambda x: x.get('created_at', ''),
+                     reverse=True)
+
+    stats = get_clients_stats(username)
+    return render_template('dashboard/clients.html',
+                           clients=clients,
+                           stats=stats)
+
 
 @app.route('/dashboard/clients/add', methods=['GET', 'POST'])
 @login_required
-def add_client():
-    if request.method == 'POST':
-        # Add client logic
-        flash('تم إضافة العميل بنجاح', 'success')
-        return redirect(url_for('dashboard_clients'))
-    return render_template('dashboard/add_client.html')
+@disable_in_demo
+def dashboard_add_client():
+    """Add new client for current user"""
+    username = session.get('username')
+    prefill = None
+    
+    # Handle prefill from message
+    prefill_msg_id = request.args.get('prefill_msg_id')
+    if prefill_msg_id:
+        is_admin = session.get('is_admin')
+        message = None
+        
+        # Check admin DB messages
+        if is_admin:
+            try:
+                db_msg = Message.query.get(prefill_msg_id)
+                if db_msg:
+                    message = {
+                        'name': db_msg.name,
+                        'email': db_msg.email,
+                        'company': getattr(db_msg, 'company', ''),
+                        'message': db_msg.message
+                    }
+            except:
+                pass
+        
+        # Fallback to JSON
+        if not message:
+            data = load_data(username=username)
+            message = next((m for m in data.get('messages', [])
+                            if str(m.get('id')) == str(prefill_msg_id)), None)
+        
+        if message:
+            prefill = message
 
-@app.route('/catalog')
-def catalog():
-    return render_template('catalog.html')
+    if request.method == 'POST':
+        data = load_data(username=username)
+
+        if 'clients' not in data:
+            data['clients'] = []
+
+        client_ids = [c.get('id', 0) for c in data.get('clients', [])]
+        new_id = max(client_ids) + 1 if client_ids else 1
+
+        new_client = {
+            'id':
+            new_id,
+            'name':
+            request.form.get('name', '').strip(),
+            'email':
+            request.form.get('email', '').strip(),
+            'phone':
+            request.form.get('phone', '').strip(),
+            'company':
+            request.form.get('company', '').strip(),
+            'project_title':
+            request.form.get('project_title', '').strip(),
+            'project_description':
+            request.form.get('project_description', '').strip(),
+            'status':
+            request.form.get('status', 'lead'),
+            'price':
+            request.form.get('price', '').strip(),
+            'deadline':
+            request.form.get('deadline', '').strip(),
+            'start_date':
+            request.form.get('start_date', '').strip()
+            or datetime.now().strftime('%Y-%m-%d'),
+            'notes':
+            request.form.get('notes', '').strip(),
+            'created_at':
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'status_updated_at':
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+        data['clients'].append(new_client)
+        save_data(data, username=username)
+
+        # Send Telegram notification for new lead (to user's channel)
+        send_telegram_notification(
+            f"📊 <b>New Lead Added</b>\n\n"
+            f"👤 {new_client['name']}\n"
+            f"📧 {new_client['email']}\n"
+            f"📋 {new_client['project_title']}\n"
+            f"💰 ${new_client['price'] if new_client['price'] else 'TBD'}",
+            username=username)
+
+        flash('Client added successfully', 'success')
+        return redirect(url_for('dashboard_clients'))
+
+    return render_template('dashboard/add_client.html', prefill=prefill)
+
+
+@app.route('/dashboard/clients/edit/<int:client_id>', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_edit_client(client_id):
+    """Edit existing client for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    client = next(
+        (c for c in data.get('clients', []) if c.get('id') == client_id), None)
+
+    if not client:
+        flash('Client not found', 'error')
+        return redirect(url_for('dashboard_clients'))
+
+    if request.method == 'POST':
+        old_status = client.get('status', 'lead')
+        new_status = request.form.get('status', 'lead')
+
+        client['name'] = request.form.get('name', '').strip()
+        client['email'] = request.form.get('email', '').strip()
+        client['phone'] = request.form.get('phone', '').strip()
+        client['company'] = request.form.get('company', '').strip()
+        client['project_title'] = request.form.get('project_title', '').strip()
+        client['project_description'] = request.form.get(
+            'project_description', '').strip()
+        client['status'] = new_status
+        client['price'] = request.form.get('price', '').strip()
+        client['deadline'] = request.form.get('deadline', '').strip()
+        client['start_date'] = request.form.get('start_date', '').strip()
+        client['notes'] = request.form.get('notes', '').strip()
+
+        if old_status != new_status:
+            client['status_updated_at'] = datetime.now().strftime(
+                '%Y-%m-%d %H:%M:%S')
+            # Send Telegram notification for status change (to user's channel)
+            status_emoji = {
+                'lead': '🎯',
+                'negotiation': '💬',
+                'in-progress': '⚙️',
+                'delivered': '✅'
+            }
+            send_telegram_notification(
+                f"{status_emoji.get(new_status, '📊')} <b>Client Status Updated</b>\n\n"
+                f"👤 {client['name']}\n"
+                f"📋 {client['project_title']}\n"
+                f"📍 {old_status.title()} → {new_status.replace('-', ' ').title()}\n"
+                f"💰 ${client['price'] if client['price'] else 'TBD'}\n"
+                f"📝 {client['notes'][:100] if client['notes'] else 'N/A'}",
+                username=username)
+
+        save_data(data, username=username)
+        flash('Client updated successfully', 'success')
+        return redirect(url_for('dashboard_clients'))
+
+    return render_template('dashboard/edit_client.html', client=client)
+
+
+@app.route('/dashboard/clients/view/<int:client_id>')
+@login_required
+def dashboard_view_client(client_id):
+    """View client details for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    client = next(
+        (c for c in data.get('clients', []) if c.get('id') == client_id), None)
+
+    if not client:
+        flash('Client not found', 'error')
+        return redirect(url_for('dashboard_clients'))
+
+    return render_template('dashboard/view_client.html', client=client)
+
+
+@app.route('/dashboard/clients/delete/<int:client_id>')
+@login_required
+@disable_in_demo
+def dashboard_delete_client(client_id):
+    """Delete client for current user"""
+    username = session.get('username')
+    data = load_data(username=username)
+    data['clients'] = [
+        c for c in data.get('clients', []) if c.get('id') != client_id
+    ]
+    save_data(data, username=username)
+    flash('Client deleted successfully', 'success')
+    return redirect(url_for('dashboard_clients'))
+
+
+@app.route('/dashboard/change-password', methods=['GET', 'POST'])
+@login_required
+@disable_in_demo
+def dashboard_change_password():
+    """Change user password"""
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '').strip()
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        username = session.get('username')
+
+        # Validate inputs
+        if not current_password:
+            flash('Current password is required', 'error')
+        elif not new_password:
+            flash('New password is required', 'error')
+        elif len(new_password) < 8:
+            flash('New password must be at least 8 characters long', 'error')
+        elif new_password != confirm_password:
+            flash('New password and confirmation do not match', 'error')
+        else:
+            # Verify current password
+            data = load_data()
+            user_found = False
+
+            if 'users' in data:
+                for user in data['users']:
+                    if user.get('username') == username:
+                        user_found = True
+                        # For admin user, check against admin credentials
+                        if username == ADMIN_CREDENTIALS['username']:
+                            if not check_password_hash(
+                                    ADMIN_CREDENTIALS['password_hash'],
+                                    current_password):
+                                flash('Current password is incorrect', 'error')
+                                return render_template(
+                                    'dashboard/change_password.html')
+                        else:
+                            # For regular users, check their stored hash
+                            if not check_password_hash(
+                                    user.get('password_hash', ''),
+                                    current_password):
+                                flash('Current password is incorrect', 'error')
+                                return render_template(
+                                    'dashboard/change_password.html')
+
+                        # Update password
+                        user['password_hash'] = generate_password_hash(
+                            new_password)
+                        save_data(data)
+
+                        flash(
+                            'Password changed successfully. Please login again.',
+                            'success')
+                        session.clear()
+                        return redirect(url_for('dashboard_login'))
+
+            if not user_found:
+                flash('User not found', 'error')
+
+    return render_template('dashboard/change_password.html')
+
+
+@app.route('/cv-preview')
+@disable_in_demo
+def cv_preview():
+    """CV preview page for current user or default if not logged in"""
+    username = session.get('username', 'admin')
+    data = load_data(username=username)
+    return render_template('cv_preview.html', data=data)
+
+
+@app.route('/download-cv')
+@disable_in_demo
+def download_cv():
+    """Download CV as PDF for current user"""
+    try:
+        import weasyprint
+        username = session.get('username', 'admin')
+        data = load_data(username=username)
+        html_content = render_template('cv_preview.html',
+                                       data=data,
+                                       pdf_mode=True)
+
+        pdf_buffer = io.BytesIO()
+        html = weasyprint.HTML(string=html_content, base_url=request.url_root)
+        html.write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+
+        filename = data.get("name", "CV").replace(' ', '_')
+        return send_file(pdf_buffer,
+                         mimetype='application/pdf',
+                         as_attachment=True,
+                         download_name=f'{filename}_CV.pdf')
+
+    except ImportError:
+        flash(
+            'PDF generation library not available. Please install weasyprint.',
+            'error')
+        return redirect(url_for('cv_preview'))
+    except Exception as e:
+        app.logger.error(f"PDF Generation Error: {str(e)}")
+        flash(f'Error generating PDF: {str(e)}', 'error')
+        return redirect(url_for('cv_preview'))
+
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers including Content Security Policy"""
+    response.headers['Content-Security-Policy'] = (
+        "default-src *; "
+        "script-src * 'unsafe-inline' 'unsafe-eval'; "
+        "style-src * 'unsafe-inline'; "
+        "font-src *; "
+        "img-src * data: blob:; "
+        "connect-src *; "
+        "frame-ancestors *;")
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers[
+        'Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
 
 if __name__ == '__main__':
+    # Run the Flask app on 0.0.0.0:5000 to allow external access
     app.run(host='0.0.0.0', port=5000, debug=True)

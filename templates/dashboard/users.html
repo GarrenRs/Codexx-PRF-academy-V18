@@ -12,7 +12,7 @@
                 <h5 class="modal-title" id="addUserModalLabel" style="color: var(--primary-gold);">Add New User Account</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url_for('dashboard_users') }}" method="POST">
+            <form action="{{ url_for('dashboard_add_user') }}" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label" style="color: #aaa;">Username</label>
