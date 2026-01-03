@@ -13,16 +13,6 @@ class Config:
     
     # Database Settings
     _database_url = os.environ.get('DATABASE_URL')
-    if not _database_url:
-        # Check for individual Replit DB secrets if DATABASE_URL is missing
-        pg_user = os.environ.get('PGUSER')
-        pg_pass = os.environ.get('PGPASSWORD')
-        pg_host = os.environ.get('PGHOST')
-        pg_port = os.environ.get('PGPORT')
-        pg_db = os.environ.get('PGDATABASE')
-        if all([pg_user, pg_pass, pg_host, pg_port, pg_db]):
-            _database_url = f"postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
-    
     if _database_url and _database_url.startswith("postgres://"):
         _database_url = _database_url.replace("postgres://", "postgresql://", 1)
     
