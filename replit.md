@@ -1,36 +1,30 @@
-# Codexx Academy - Strategic Documentation & Vision
+# Codexx Academy - Strategic Documentation & Vision (Replit Deployment)
 
 ## 1. Vision & Methodology
-Codexx Academy is not a public marketplace; it is an **Elite Proof-of-Work Ecosystem**. Our methodology centers on three core pillars:
+Codexx Academy is an **Elite Proof-of-Work Ecosystem**. Our methodology centers on three core pillars:
 *   **Proof over Promise**: We prioritize verified execution history over self-proclaimed skills.
 *   **Closed Filtering**: Access is controlled through direct internal vetting, ensuring only high-caliber professionals represent the Academy.
 *   **Unmediated Transparency**: We facilitate direct peer-to-peer and client-to-professional connectivity without platform interference.
+*   **Build in Silence, Show in Public**: A core philosophy where work is cultivated privately and showcased with absolute proof.
 
-## 2. Technical Architecture (Replit Optimized)
+## 2. Technical Architecture
 *   **Runtime**: Python 3.11 with Flask 3.x
-*   **Database**: PostgreSQL (Neon-backed) for structured data & JSONB for flexible portfolio assets.
-*   **Security**: Integrated rate-limiting, IP-based activity monitoring, and professional-grade session management.
-*   **Isolation**: Multi-tenant data structure ensures zero cross-contamination between professional portfolios.
+*   **Database**: PostgreSQL (Managed via Replit DATABASE_URL)
+*   **Authentication**: Custom session-based auth with admin/demo roles.
+*   **SEO System**: Dynamic metadata injection and optimized crawler access.
+*   **Security**: Integrated rate-limiting and IP-based activity monitoring.
+*   **Deployment**: Optimized for Replit Cloud with Gunicorn.
 
-## 3. Deployment Configuration
-*   **Environment**: Replit Cloud
-*   **Process Manager**: Gunicorn (Pre-fork worker model)
-*   **Scaling**: Autoscale enabled for efficient resource management.
+## 3. Project Structure
+- `app.py`: Main Flask application logic and routing.
+- `models.py`: SQLAlchemy database models (PostgreSQL).
+- `config.py`: Environment-based configuration management.
+- `templates/`: Jinja2 HTML templates for dashboard and public pages.
+- `static/`: CSS, JS, and uploaded assets.
+- `backups/`: Automated data backup system.
 
----
-
-# Readiness Report: Live Deployment (V 1.0)
-
-## Status: READY FOR LAUNCH (with 1 Priority Recommendation)
-
-### ✅ Passed Checks:
-*   **Database Integrity**: PostgreSQL connection verified; migrations complete.
-*   **Routing System**: All core professional routes (Verification, Mastery, Standards) are mapped.
-*   **Security Layer**: Rate limiting and IP logging are active in the global context.
-*   **UI/UX Consistency**: Landing page effectively filters "Demo" vs "Verified" status.
-
-### ⚠️ Priority Implementation (Pre-launch):
-*   **Production Secrets**: Ensure `ADMIN_PASSWORD` and `SESSION_SECRET` are moved from defaults to Replit Secrets before sharing the public URL.
-
-### 📊 Readiness Score: 95%
-The system is architecturally sound and functionally complete according to the Academy's methodology.
+## 4. Strategic Analysis & SEO Goals
+*   **Primary Scenario**: A professional joins, builds their proof-of-work history privately, and upon verification, gains an elite public digital presence.
+*   **SEO Focus**: Targeting high-intent professional keywords while maintaining the exclusivity of the "Academy" brand.
+*   **UX Direction**: Minimalist luxury, zero-distraction interfaces that prioritize "The Work" over "The Profile".
+*   **Content Logic**: "Building in the shadows, radiating in the light."

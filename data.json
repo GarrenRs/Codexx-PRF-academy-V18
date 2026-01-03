@@ -47,60 +47,32 @@
     {
       "id": 1,
       "username": "Codexx",
-      "password_hash": "scrypt:32768:8:1$O7WxAgTrKh4MuVV5$9c3c1536aec2ba48b2a4c21e2f11a2156155b3f9b001c38b70c76fd62e1119f4e9aac112fe26407f4374d384c2bef2d34df46866eadac9eb830bdcb15a843ac0",
-      "email": "sarah@example.com",
+      "password_hash": "scrypt:32768:8:1$FCZKjolUeTFnRsw6$f5a5791f062acbdb5ef9741f11b3e1fbbd88bf98a551056bf2670c9313ec56d1de82289cb6e046cfebba0ef7da0dcd5871617a9c08973261462d5091bb880515",
+      "email": "Raesondark@gmail.com",
+      "role": "user",
+      "is_demo": true,
+      "created_at": "2026-01-03 01:00:03"
+    },
+    {
+      "id": 2,
+      "username": "alex_dev",
+      "password_hash": "scrypt:32768:8:1$OlNjyW6CXA1Z5DqF$2b9ac6797bb5d93a34a9891e7eef0bb35173c48172aa434a4b4c6bdd9fbec04f247b2c1f5fc3a724ca4a11c569a3f5eb244b2a56f59e2adfde7d6ed4dc8fb697",
+      "email": "ngzrku@picdirect.net",
       "role": "user",
       "is_demo": false,
-      "created_at": "2026-01-02 22:31:49",
-      "is_verified": true
+      "created_at": "2026-01-03 01:28:07"
     }
   ],
   "portfolios": {
     "Codexx": {
       "username": "Codexx",
-      "name": "Doctor Codexx",
+      "name": "",
       "title": "",
       "description": "",
       "about": "",
-      "photo": "static/assets/uploads/profile_Codexx_20260102_233119_photo_2025-12-01_18-53-08.jpg",
+      "photo": "",
       "skills": [],
-      "projects": [
-        {
-          "id": 1,
-          "title": "Automation",
-          "short_description": "Choose a clear and descriptive project title",
-          "content": "hort description: 1-2 lines only\r\n Full content: Explain the project in detail\r\n Add a clear and attractive image",
-          "description": "Choose a clear and descriptive project title",
-          "image": "static/assets/uploads/project_Codexx_1_20260102_224257_photo_2025-12-01_18-53-08.jpg",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": [
-            "React"
-          ]
-        },
-        {
-          "id": 2,
-          "title": "Dev app Mobile",
-          "short_description": "Specify technologies used accurately",
-          "content": "Sub-heading:\r\n\r\n<h3>Features</h3>\r\nBullet list:\r\n\r\n<ul>\r\n  <li>Easy to use</li>\r\n</ul>\r\nRegular paragraph:\r\n\r\n<p>Project description...</p>\r\nOr write plain text without HTML",
-          "description": "Specify technologies used accurately",
-          "image": "static/assets/uploads/project_Codexx_2_20260102_224342_original-279f573954c5eca9106211062000534a.webp",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": []
-        },
-        {
-          "id": 3,
-          "title": "Application web",
-          "short_description": "Add demo and code repository links",
-          "content": "Full content: Explain the project in detail\r\n Add a clear and attractive image",
-          "description": "Add demo and code repository links",
-          "image": "static/assets/uploads/project_Codexx_3_20260102_224419_ChatGPT_Image_Dec_6_2025_10_29_03_PM.png",
-          "demo_url": "#",
-          "github_url": "#",
-          "technologies": []
-        }
-      ],
+      "projects": [],
       "messages": [],
       "clients": [],
       "contact": {
@@ -114,136 +86,152 @@
         "twitter": ""
       },
       "settings": {
-        "theme": "vibrant-green"
+        "theme": "luxury-gold"
       },
       "visitors": {
-        "total": 12,
+        "total": 0,
+        "today": [],
+        "unique_ips": []
+      }
+    },
+    "alex_dev": {
+      "username": "alex_dev",
+      "name": "",
+      "title": "",
+      "description": "",
+      "about": "",
+      "photo": "",
+      "skills": [],
+      "projects": [],
+      "messages": [],
+      "clients": [],
+      "contact": {
+        "email": "",
+        "phone": "",
+        "location": ""
+      },
+      "social": {
+        "linkedin": "",
+        "github": "",
+        "twitter": ""
+      },
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "visitors": {
+        "total": 2,
         "today": [
           {
-            "ip": "105.235.130.45, 10.81.13.40",
-            "timestamp": "2026-01-02 22:31:57",
-            "date": "2026-01-02"
+            "ip": "105.235.130.45, 10.81.11.129",
+            "timestamp": "2026-01-03 01:28:15",
+            "date": "2026-01-03"
           },
           {
-            "ip": "105.235.130.45, 10.81.6.140",
-            "timestamp": "2026-01-02 22:32:03",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.2.54",
-            "timestamp": "2026-01-02 22:45:19",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.11.120",
-            "timestamp": "2026-01-02 22:45:41",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.0.229",
-            "timestamp": "2026-01-02 22:45:59",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.6.140",
-            "timestamp": "2026-01-02 22:46:47",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.11.120",
-            "timestamp": "2026-01-02 22:50:00",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.13.40",
-            "timestamp": "2026-01-02 22:50:15",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.81.9.55",
-            "timestamp": "2026-01-02 22:50:29",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.8.241",
-            "timestamp": "2026-01-02 23:08:04",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.3.41",
-            "timestamp": "2026-01-02 23:09:54",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.6.100",
-            "timestamp": "2026-01-02 23:10:00",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.6.100",
-            "timestamp": "2026-01-02 23:10:51",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.10.130",
-            "timestamp": "2026-01-02 23:16:35",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.11.185",
-            "timestamp": "2026-01-02 23:17:02",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.8.241",
-            "timestamp": "2026-01-02 23:24:52",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.9.183",
-            "timestamp": "2026-01-02 23:29:58",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.9.183",
-            "timestamp": "2026-01-02 23:30:21",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.9.183",
-            "timestamp": "2026-01-02 23:31:28",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.9.183",
-            "timestamp": "2026-01-02 23:33:09",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.10.130",
-            "timestamp": "2026-01-02 23:34:59",
-            "date": "2026-01-02"
-          },
-          {
-            "ip": "105.235.130.45, 10.82.10.130",
-            "timestamp": "2026-01-02 23:36:03",
-            "date": "2026-01-02"
+            "ip": "105.235.130.45, 10.81.5.230",
+            "timestamp": "2026-01-03 01:28:27",
+            "date": "2026-01-03"
           }
         ],
         "unique_ips": [
-          "105.235.130.45, 10.82.9.183",
-          "105.235.130.45, 10.82.8.241",
-          "105.235.130.45, 10.82.10.130",
-          "105.235.130.45, 10.81.9.55",
-          "105.235.130.45, 10.81.11.120",
-          "105.235.130.45, 10.81.13.40",
-          "105.235.130.45, 10.81.2.54",
-          "105.235.130.45, 10.81.0.229",
-          "105.235.130.45, 10.82.3.41",
-          "105.235.130.45, 10.82.11.185",
-          "105.235.130.45, 10.81.6.140",
-          "105.235.130.45, 10.82.6.100"
+          "105.235.130.45, 10.81.11.129",
+          "105.235.130.45, 10.81.5.230"
         ]
+      }
+    },
+    "sarah_stratege": {
+      "username": "sarah_stratege",
+      "name": "Sarah Chen",
+      "title": "Global Strategy Director",
+      "description": "Strategic business consultant focused on digital transformation.",
+      "about": "Driving growth through data-backed insights and revolutionary corporate strategies.",
+      "photo": "/static/images/profiles/sarah.png",
+      "skills": [
+        {
+          "name": "Business Strategy",
+          "level": 98
+        },
+        {
+          "name": "Market Analysis",
+          "level": 92
+        }
+      ],
+      "projects": [
+        {
+          "title": "Market Expansion",
+          "description": "Growth strategy for emerging markets.",
+          "image": "/static/images/projects/growth_roadmap.png"
+        },
+        {
+          "title": "Digital Transformation",
+          "description": "Modernizing legacy operations.",
+          "image": "/static/images/projects/urban_park.png"
+        },
+        {
+          "title": "ESG Strategy",
+          "description": "Sustainability framework development.",
+          "image": "/static/images/projects/cloud_infra.png"
+        }
+      ],
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "contact": {
+        "email": "sarah@codexx.academy",
+        "phone": "+1 555 987 6543",
+        "location": "Singapore"
+      },
+      "social": {
+        "linkedin": "sarahchen",
+        "github": "sarahstrat",
+        "twitter": "sarah_biz"
+      }
+    },
+    "marcus_builds": {
+      "username": "marcus_builds",
+      "name": "Marcus Thorne",
+      "title": "Principal Architect",
+      "description": "Award-winning architect focused on sustainable urban design.",
+      "about": "Designing the future of cities with a focus on ecology and community well-being.",
+      "photo": "/static/images/profiles/marcus.png",
+      "skills": [
+        {
+          "name": "Sustainable Design",
+          "level": 96
+        },
+        {
+          "name": "Urban Planning",
+          "level": 88
+        }
+      ],
+      "projects": [
+        {
+          "title": "Eco-Park Design",
+          "description": "Sustainable city green space.",
+          "image": "/static/images/projects/urban_park.png"
+        },
+        {
+          "title": "Skyline Eco-Tower",
+          "description": "Carbon-neutral residential high-rise.",
+          "image": "/static/images/projects/site_plan.png"
+        },
+        {
+          "title": "Modular Living",
+          "description": "Sustainable housing solutions.",
+          "image": "/static/images/projects/api_gateway.png"
+        }
+      ],
+      "settings": {
+        "theme": "luxury-gold"
+      },
+      "contact": {
+        "email": "marcus@codexx.academy",
+        "phone": "+1 555 444 3322",
+        "location": "Berlin, Germany"
+      },
+      "social": {
+        "linkedin": "marcusthorne",
+        "github": "marcusarch",
+        "twitter": "marcus_builds"
       }
     }
   }

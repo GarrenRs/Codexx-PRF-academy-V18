@@ -110,25 +110,23 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">SMTP Host</label>
-                                        <input type="text" class="form-control" name="smtp_host" placeholder="smtp.gmail.com" value="{{ data.notifications.smtp.host if data.notifications and data.notifications.smtp else '' }}">
-                                        <small class="text-secondary">e.g., smtp.gmail.com, smtp.outlook.com, smtp.mail.yahoo.com</small>
+                                        <input type="text" class="form-control" name="smtp_host" placeholder="e.g. smtp.gmail.com" value="{{ smtp_host if smtp_host else '' }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Port</label>
-                                        <input type="number" class="form-control" name="smtp_port" placeholder="587" value="{{ data.notifications.smtp.port if data.notifications and data.notifications.smtp else '' }}">
-                                        <small class="text-secondary">Use 587 for TLS (recommended) or 465 for SSL</small>
+                                        <input type="number" class="form-control" name="smtp_port" placeholder="e.g. 587" value="{{ smtp_port if smtp_port else '' }}">
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Email Address</label>
-                                        <input type="email" class="form-control" name="smtp_email" placeholder="your-email@gmail.com" value="{{ data.notifications.smtp.email if data.notifications and data.notifications.smtp else '' }}">
+                                        <input type="email" class="form-control" name="smtp_email" placeholder="Enter professional email" value="{{ smtp_email if smtp_email and 'Codexx' not in smtp_email else '' }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Password / App Password</label>
-                                        <input type="password" class="form-control" name="smtp_password" placeholder="Enter password or app password">
-                                        <small class="text-secondary">For Gmail: Always use App Password, not your personal password</small>
+                                        <input type="password" class="form-control" name="smtp_password" placeholder="Enter secure password">
+                                        <small class="text-secondary">For Gmail: Use an <strong>App Password</strong> for secure access.</small>
                                     </div>
                                 </div>
 
@@ -183,19 +181,19 @@
                             <form method="POST" action="/dashboard/telegram">
                                 <div class="mb-3">
                                     <label class="form-label">Telegram Bot Token</label>
-                                    <input type="password" class="form-control" name="bot_token" placeholder="Enter your Telegram Bot Token" value="{{ data.notifications.telegram.bot_token if data.notifications and data.notifications.telegram else '' }}">
+                                    <input type="password" class="form-control" name="bot_token" placeholder="Enter your 46-character bot token" value="{{ telegram_bot_token if telegram_bot_token and '...' not in telegram_bot_token else '' }}">
                                     <small class="d-block mt-2 text-secondary">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        <a href="https://core.telegram.org/bots#how-do-i-create-a-bot" target="_blank" style="color: var(--primary-color);">Learn how to get Bot Token</a>
+                                        <a href="{{ url_for('guide_bot_token') }}" target="_blank" style="color: var(--primary-color);">How to get a Bot Token?</a>
                                     </small>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Telegram Chat ID</label>
-                                    <input type="text" class="form-control" name="chat_id" placeholder="Enter your Telegram Chat ID" value="{{ data.notifications.telegram.chat_id if data.notifications and data.notifications.telegram else '' }}">
+                                    <input type="text" class="form-control" name="chat_id" placeholder="Enter your numeric Chat ID (e.g. 123456789)" value="{{ telegram_chat_id if telegram_chat_id and 'Codexx' not in telegram_chat_id else '' }}">
                                     <small class="d-block mt-2 text-secondary">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        <a href="https://stackoverflow.com/questions/32423837/telegram-bot-how-to-get-a-group-chat-id" target="_blank" style="color: var(--primary-color);">Learn how to get Chat ID</a>
+                                        <a href="{{ url_for('guide_chat_id') }}" target="_blank" style="color: var(--primary-color);">How to find your Chat ID?</a>
                                     </small>
                                 </div>
 

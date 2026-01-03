@@ -458,12 +458,14 @@
                 </div>
                 <div class="col-lg-4 text-center mb-4 mb-lg-0">
                     <div class="footer-social-links d-flex justify-content-center gap-3">
-                        {% if data.social.linkedin %}<a href="{{ data.social.linkedin }}" target="_blank" class="social-link-item" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% endif %}
-                        {% if data.social.github %}<a href="{{ data.social.github }}" target="_blank" class="social-link-item" title="GitHub"><i class="fab fa-github"></i></a>{% endif %}
-                        {% if data.social.twitter %}<a href="{{ data.social.twitter }}" target="_blank" class="social-link-item" title="Twitter"><i class="fab fa-x-twitter"></i></a>{% endif %}
-                        {% if data.social.instagram %}<a href="{{ data.social.instagram }}" target="_blank" class="social-link-item" title="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}
-                        {% if data.social.facebook %}<a href="{{ data.social.facebook }}" target="_blank" class="social-link-item" title="Facebook"><i class="fab fa-facebook-f"></i></a>{% endif %}
-                        {% if data.social.youtube %}<a href="{{ data.social.youtube }}" target="_blank" class="social-link-item" title="YouTube"><i class="fab fa-youtube"></i></a>{% endif %}
+                        {% if data and data.social %}
+                            {% if data.social.linkedin %}<a href="{{ data.social.linkedin }}" target="_blank" class="social-link-item" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% endif %}
+                            {% if data.social.github %}<a href="{{ data.social.github }}" target="_blank" class="social-link-item" title="GitHub"><i class="fab fa-github"></i></a>{% endif %}
+                            {% if data.social.twitter %}<a href="{{ data.social.twitter }}" target="_blank" class="social-link-item" title="Twitter"><i class="fab fa-x-twitter"></i></a>{% endif %}
+                            {% if data.social.instagram %}<a href="{{ data.social.instagram }}" target="_blank" class="social-link-item" title="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}
+                            {% if data.social.facebook %}<a href="{{ data.social.facebook }}" target="_blank" class="social-link-item" title="Facebook"><i class="fab fa-facebook-f"></i></a>{% endif %}
+                            {% if data.social.youtube %}<a href="{{ data.social.youtube }}" target="_blank" class="social-link-item" title="YouTube"><i class="fab fa-youtube"></i></a>{% endif %}
+                        {% endif %}
                     </div>
                 </div>
                 <div class="col-lg-4 text-center text-lg-end">

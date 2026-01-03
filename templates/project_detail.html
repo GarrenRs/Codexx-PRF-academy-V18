@@ -169,7 +169,11 @@
                                 {% for other in data.projects %}
                                     {% if other.id != project.id %}
                                     <a href="/portfolio/{{ data.username }}/project/{{ other.id }}" class="d-flex align-items-center p-2 rounded hover-bg-light text-decoration-none mb-2 border">
-                                        <img src="{{ other.image or url_for('static', filename='assets/project-placeholder.svg') }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-3">
+                                        {% if other.image and (other.image.startswith('static/') or other.image.startswith('attached_assets/')) %}
+                                            <img src="{{ url_for('static', filename=other.image.replace('static/', '')) if other.image.startswith('static/') else other.image }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-3">
+                                        {% else %}
+                                            <img src="{{ other.image or url_for('static', filename='assets/project-placeholder.svg') }}" style="width: 40px; height: 40px; object-fit: cover;" class="rounded me-3">
+                                        {% endif %}
                                         <span class="text-primary small fw-bold">{{ other.title }}</span>
                                     </a>
                                     {% endif %}

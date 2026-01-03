@@ -339,7 +339,7 @@
                     <span class="text-info">Internal messages</span>
                 </a>
                 {% else %}
-                <div class="nav-section-title">Portfolio Builder</div>
+                <div class="nav-section-title">Professional Path</div>
                 <a href="{{ url_for('dashboard_general') }}" class="nav-link {% if request.endpoint == 'dashboard_general' %}active{% endif %}">
                     <i class="fas fa-id-card"></i>
                     <span>Identity</span>
@@ -452,10 +452,10 @@
             {% if is_demo_mode %}
             <div class="alert alert-warning border-0 shadow-sm mb-4 py-3" style="background: rgba(212, 175, 55, 0.08); border-radius: 15px;">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-info-circle me-3 fs-4 text-warning"></i>
+                    <i class="fas fa-graduation-cap me-3 fs-4 text-warning"></i>
                     <div>
-                        <strong class="text-warning">Limited Access Environment</strong>
-                        <p class="mb-0 small opacity-75">Some features are restricted in demo mode. Contact admin for full access.</p>
+                        <strong class="text-warning">Training Phase Active</strong>
+                        <p class="mb-0 small opacity-75">Complete all sections in your Professional Path to qualify for verification and full platform access.</p>
                     </div>
                 </div>
             </div>

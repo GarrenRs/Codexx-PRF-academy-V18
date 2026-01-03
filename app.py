@@ -60,9 +60,16 @@ def inject_global_vars():
     is_demo_mode = session.get('is_demo_mode', True)
     is_admin = session.get('is_admin', False)
     
-    # Load admin social links for the main platform footer
+    # Load admin social links strictly for the main platform footer
     admin_data = load_data(username='admin')
-    social_links = admin_data.get('social', {})
+    admin_social = admin_data.get('social', {})
+
+    # Default Meta Tags for SEO
+    default_meta = {
+        'title': 'Codexx Academy | Elite Proof-of-Work Ecosystem',
+        'description': 'The premier ecosystem for verified professionals. Build in silence, show in public.',
+        'keywords': 'Codexx Academy, Proof of Work, Elite Professionals, Portfolio Ecosystem'
+    }
 
     return {
         'current_theme': current_theme,
@@ -70,7 +77,8 @@ def inject_global_vars():
         'is_admin': is_admin,
         'username': username,
         'current_year': datetime.now().year,
-        'social': social_links,
+        'admin_social': admin_social,
+        'default_meta': default_meta,
         'get_unread_messages_count': get_unread_messages_count,
         'get_visitor_count': get_visitor_count,
         'get_clients_stats': lambda: get_clients_stats(username)
@@ -85,6 +93,7 @@ app.config['JSON_AS_ASCII'] = False
 app.config['SESSION_COOKIE_SECURE'] = False  # Changed for development in Replit
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 # Security Configuration - Load from environment variables
@@ -1410,8 +1419,14 @@ def index():
         port['is_verified'] = user_verify_map.get(uname, False)
     
     # Get social links for the footer
-    admin_portfolio = portfolios.get('admin', {})
-    social_links = admin_portfolio.get('social', {})
+    admin_data = load_data(username='admin')
+    social_links = admin_data.get('social', {})
+    
+    # Also check global config as fallback
+    if not social_links:
+        from config import get_config
+        conf = get_config()
+        # You might have global social links in config too
 
     return render_template('landing.html',
                            portfolios=portfolios,
@@ -2126,6 +2141,18 @@ def dashboard():
     return render_template('dashboard/index.html', data=data, stats=stats)
 
 
+@app.route('/guides/telegram-bot-token')
+def guide_bot_token():
+    """Guide for getting Telegram Bot Token"""
+    return render_template('pages/guide_bot_token.html')
+
+
+@app.route('/guides/telegram-chat-id')
+def guide_chat_id():
+    """Guide for getting Telegram Chat ID"""
+    return render_template('pages/guide_chat_id.html')
+
+
 @app.route('/documentation')
 def documentation():
     """Serve documentation page"""
@@ -2202,15 +2229,17 @@ def dashboard_settings():
     current_theme = data.get('settings', {}).get('theme', 'luxury-gold')
 
     # Load Telegram credentials (user-specific)
-    telegram_bot_token, telegram_chat_id = get_telegram_credentials(
-        username=username)
+    notifications = data.get('notifications', {})
+    telegram_config = notifications.get('telegram', {})
+    telegram_bot_token = telegram_config.get('bot_token', '')
+    telegram_chat_id = telegram_config.get('chat_id', '')
+    
     telegram_status = bool(telegram_bot_token and telegram_chat_id)
 
-    telegram_bot_token_display = telegram_bot_token[:
-                                                    10] + '...' if telegram_bot_token else ''
+    telegram_bot_token_display = telegram_bot_token[:10] + '...' if telegram_bot_token else ''
 
     # Load SMTP config (user-specific)
-    smtp_config = load_smtp_config(username=username)
+    smtp_config = notifications.get('smtp', {})
     smtp_host = smtp_config.get('host', '')
     smtp_port = smtp_config.get('port', '')
     smtp_email = smtp_config.get('email', '')
