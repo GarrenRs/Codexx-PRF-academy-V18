@@ -85,3 +85,11 @@ apscheduler
 python-dotenv
 requests
 sqlalchemy
+flask
+flask-dance
+flask-login
+flask-migrate
+flask-sqlalchemy
+psycopg2-binary
+werkzeug
+APScheduler

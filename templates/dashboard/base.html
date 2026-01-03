@@ -330,11 +330,11 @@
                 </a>
                 
                 <div class="nav-section-title">Communications</div>
-                <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-envelope-open-text"></i>
                     <span>Inbox</span>
                 </a>
-                <a href="{{ url_for('dashboard_internal_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_internal_messages' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-comments text-info"></i>
                     <span class="text-info">Internal messages</span>
                 </a>
@@ -367,11 +367,11 @@
                     <span>CRM</span>
                     {% if session.get('is_demo_mode') %}<i class="fas fa-lock ms-auto small opacity-50"></i>{% endif %}
                 </a>
-                <a href="{{ url_for('dashboard_messages', category='all') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-envelope-open-text"></i>
                     <span>Inbox</span>
                 </a>
-                <a href="{{ url_for('dashboard_internal_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_internal_messages' %}active{% endif %}">
+                <a href="{{ url_for('dashboard_messages') }}" class="nav-link {% if request.endpoint == 'dashboard_messages' %}active{% endif %}">
                     <i class="fas fa-comments text-info"></i>
                     <span class="text-info">Internal messages</span>
                 </a>
@@ -389,7 +389,7 @@
                     <i class="fas fa-key"></i>
                     <span>Change Password</span>
                 </a>
-                <a href="{{ url_for('access_instructions') }}" class="nav-link {% if request.endpoint == 'access_instructions' %}active{% endif %}">
+                <a href="{{ url_for('verification') }}" class="nav-link {% if request.endpoint == 'verification' %}active{% endif %}">
                     <i class="fas fa-shield-alt"></i>
                     <span>Access Standards</span>
                 </a>
